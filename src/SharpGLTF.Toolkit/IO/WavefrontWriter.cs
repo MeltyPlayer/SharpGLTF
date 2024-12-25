@@ -268,9 +268,10 @@ namespace SharpGLTF.IO
             // bake the material transforms into the UV coordinates
             triangles = EvaluatedTriangle<VGEOMETRY, VMATERIAL, VEMPTY>.TransformTextureCoordsByMaterial(triangles);
 
+            var cache = new Dictionary<Schema2.Material, Material>();
             foreach (var triangle in triangles)
             {
-                var dstMaterial = GetMaterialFromTriangle(triangle.Material);
+                var dstMaterial = GetMaterialFromTriangle(triangle.Material, cache);
                 this.AddTriangle(dstMaterial, triangle.A, triangle.B, triangle.C);
             }
         }
