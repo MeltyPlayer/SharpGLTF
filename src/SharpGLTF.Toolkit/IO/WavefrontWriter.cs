@@ -288,27 +288,35 @@ namespace SharpGLTF.IO
             // bake the material transforms into the UV coordinates
             triangles = EvaluatedTriangle<VGEOMETRY, VMATERIAL, VEMPTY>.TransformTextureCoordsByMaterial(triangles);
 
+            var cache = new Dictionary<Schema2.Material, Material>();
             foreach (var triangle in triangles)
             {
-                var dstMaterial = GetMaterialFromTriangle(triangle.Material);
+                var dstMaterial = GetMaterialFromTriangle(triangle.Material, cache);
                 this.AddTriangle(dstMaterial, triangle.A, triangle.B, triangle.C);
             }
         }
 
-        private static Material GetMaterialFromTriangle(Schema2.Material srcMaterial)
+        private static Material GetMaterialFromTriangle(Schema2.Material srcMaterial, IDictionary<Schema2.Material, Material> cache)
         {
             if (srcMaterial == null) return default;
+
+            if (cache.TryGetValue(srcMaterial, out var dstMaterial))
+            {
+                return dstMaterial;
+            }
 
             // https://stackoverflow.com/questions/36510170/how-to-calculate-specular-contribution-in-pbr
 
             var diffuse = srcMaterial.GetDiffuseColor(Vector4.One);
 
-            var dstMaterial = default(Material);
+            dstMaterial = default;
 
             dstMaterial.DiffuseColor = new Vector3(diffuse.X, diffuse.Y, diffuse.Z);
             dstMaterial.SpecularColor = new Vector3(0.2f);
 
             dstMaterial.DiffuseTexture = srcMaterial.GetDiffuseTexture()?.PrimaryImage?.Content ?? default;
+
+            cache[srcMaterial] = dstMaterial;
 
             return dstMaterial;
         }
