@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Collections;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 using BYTES = System.Memory<byte>;
@@ -232,7 +233,8 @@ namespace SharpGLTF.Memory
 
             if (_Normalized)
             {
-                switch (_Encoding) {
+                switch (_Encoding)
+                {
                     case ENCODING.BYTE:
                     {
                         var span = MemoryMarshal.Cast<byte, sbyte>(this._Data.Span);
@@ -290,7 +292,8 @@ namespace SharpGLTF.Memory
                 return;
             }
 
-            switch (_Encoding) {
+            switch (_Encoding)
+            {
                 case ENCODING.BYTE:
                     {
                         var span = MemoryMarshal.Cast<byte, sbyte>(this._Data.Span);
@@ -379,7 +382,8 @@ namespace SharpGLTF.Memory
 
             if (_Normalized)
             {
-                switch (_Encoding) {
+                switch (_Encoding)
+                {
                     case ENCODING.BYTE:
                     {
                         var span = MemoryMarshal.Cast<byte, sbyte>(this._Data.Span);
@@ -437,7 +441,8 @@ namespace SharpGLTF.Memory
                 return;
             }
 
-            switch (_Encoding) {
+            switch (_Encoding)
+            {
                 case ENCODING.BYTE:
                     {
                         var span = MemoryMarshal.Cast<byte, sbyte>(this._Data.Span);
@@ -512,6 +517,178 @@ namespace SharpGLTF.Memory
                             for (var subI = 0; subI < subCount; ++subI)
                             {
                                 span[baseDstI + subI] = src[subCount * rowI + subI];
+                            }
+                        }
+                        break;
+                    }
+                default: throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public void GetMinAndMax(IList<double> mins, IList<double> maxes)
+        {
+            var subCount = mins.Count;
+            Guard.MustBeEqualTo(subCount, maxes.Count, nameof(subCount));
+
+            var rowCount = this._ItemCount;
+
+            if (_Normalized)
+            {
+                switch (_Encoding)
+                {
+                    case ENCODING.BYTE:
+                    {
+                        var span = MemoryMarshal.Cast<byte, sbyte>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseSrcI = rowI * _ByteStride;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                var value = Math.Max(span[baseSrcI + subI] / 127.0f, -1);
+                                mins[subI] = Math.Min(mins[subI], value);
+                                maxes[subI] = Math.Max(maxes[subI], value);
+                            }
+                        }
+                        break;
+                    }
+                    case ENCODING.UNSIGNED_BYTE:
+                        {
+                            var span = this._Data.Span;
+                            for (var rowI = 0; rowI < rowCount; ++rowI)
+                            {
+                                var baseSrcI = rowI * _ByteStride;
+                                for (var subI = 0; subI < subCount; ++subI)
+                                {
+                                    var value = span[baseSrcI + subI] / 255.0f;
+                                    mins[subI] = Math.Min(mins[subI], value);
+                                    maxes[subI] = Math.Max(maxes[subI], value);
+                                }
+                            }
+                            break;
+                        }
+                    case ENCODING.SHORT:
+                        {
+                            var span = MemoryMarshal.Cast<byte, short>(this._Data.Span);
+                            for (var rowI = 0; rowI < rowCount; ++rowI)
+                            {
+                                var baseSrcI = (rowI * _ByteStride) >> 1;
+                                for (var subI = 0; subI < subCount; ++subI)
+                                {
+                                    var value = Math.Max(span[baseSrcI + subI] / 32767.0f, -1);
+                                    mins[subI] = Math.Min(mins[subI], value);
+                                    maxes[subI] = Math.Max(maxes[subI], value);
+                                }
+                            }
+                            break;
+                        }
+                    case ENCODING.UNSIGNED_SHORT:
+                        {
+                            var span = MemoryMarshal.Cast<byte, ushort>(this._Data.Span);
+                            for (var rowI = 0; rowI < rowCount; ++rowI)
+                            {
+                                var baseSrcI = (rowI * _ByteStride) >> 1;
+                                for (var subI = 0; subI < subCount; ++subI)
+                                {
+                                    var value = span[baseSrcI + subI] / 65535.0f;
+                                    mins[subI] = Math.Min(mins[subI], value);
+                                    maxes[subI] = Math.Max(maxes[subI], value);
+                                }
+                            }
+                            break;
+                        }
+                    default: throw new ArgumentOutOfRangeException();
+                }
+                return;
+            }
+
+            switch (_Encoding)
+            {
+                case ENCODING.BYTE:
+                    {
+                        var span = MemoryMarshal.Cast<byte, sbyte>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseSrcI = rowI * _ByteStride;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                var value = span[baseSrcI + subI];
+                                mins[subI] = Math.Min(mins[subI], value);
+                                maxes[subI] = Math.Max(maxes[subI], value);
+                            }
+                        }
+                        break;
+                    }
+                case ENCODING.UNSIGNED_BYTE:
+                    {
+                        var span = this._Data.Span;
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseSrcI = rowI * _ByteStride;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                var value = span[baseSrcI + subI];
+                                mins[subI] = Math.Min(mins[subI], value);
+                                maxes[subI] = Math.Max(maxes[subI], value);
+                            }
+                        }
+                        break;
+                    }
+                case ENCODING.SHORT:
+                    {
+                        var span = MemoryMarshal.Cast<byte, short>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseSrcI = (rowI * _ByteStride) >> 1;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                var value = span[baseSrcI + subI];
+                                mins[subI] = Math.Min(mins[subI], value);
+                                maxes[subI] = Math.Max(maxes[subI], value);
+                            }
+                        }
+                        break;
+                    }
+                case ENCODING.UNSIGNED_SHORT:
+                    {
+                        var span = MemoryMarshal.Cast<byte, ushort>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseSrcI = (rowI * _ByteStride) >> 1;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                var value = span[baseSrcI + subI];
+                                mins[subI] = Math.Min(mins[subI], value);
+                                maxes[subI] = Math.Max(maxes[subI], value);
+                            }
+                        }
+                        break;
+                    }
+                case ENCODING.UNSIGNED_INT:
+                    {
+                        var span = MemoryMarshal.Cast<byte, uint>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseSrcI = (rowI * _ByteStride) >> 2;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                var value = span[baseSrcI + subI];
+                                mins[subI] = Math.Min(mins[subI], value);
+                                maxes[subI] = Math.Max(maxes[subI], value);
+                            }
+                        }
+                        break;
+                    }
+                case ENCODING.FLOAT:
+                    {
+                        var span = MemoryMarshal.Cast<byte, float>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseSrcI = (rowI * _ByteStride) >> 2;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                var value = span[baseSrcI + subI];
+                                mins[subI] = Math.Min(mins[subI], value);
+                                maxes[subI] = Math.Max(maxes[subI], value);
                             }
                         }
                         break;
@@ -1598,6 +1775,11 @@ namespace SharpGLTF.Memory
             var count = _Dimensions;
 
             for (int i = 0; i < count; ++i) dstItem[i] = _Accessor[index, i];
+        }
+
+        public void GetMinAndMax(IList<double> mins, IList<double> maxes)
+        {
+            _Accessor.GetMinAndMax(mins, maxes);
         }
 
         public IEnumerator<Single[]> GetEnumerator() { return new EncodedArrayEnumerator<Single[]>(this); }

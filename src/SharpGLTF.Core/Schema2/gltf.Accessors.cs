@@ -170,19 +170,7 @@ namespace SharpGLTF.Schema2
             }
 
             var array = new MultiArray(this.SourceBufferView.Content, this.ByteOffset, this.Count, this.SourceBufferView.ByteStride, dimensions, this.Encoding, false);
-
-            var current = new float[dimensions];
-
-            for (int i = 0; i < array.Count; ++i)
-            {
-                array.CopyItemTo(i, current);
-
-                for (int j = 0; j < current.Length; ++j)
-                {
-                    this._min[j] = Math.Min(this._min[j], current[j]);
-                    this._max[j] = Math.Max(this._max[j], current[j]);
-                }
-            }
+            array.GetMinAndMax(this._min, this._max);
         }
 
         #endregion
