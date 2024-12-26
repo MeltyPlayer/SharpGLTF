@@ -7,6 +7,7 @@ using System.Linq;
 using BYTES = System.Memory<byte>;
 
 using ENCODING = SharpGLTF.Schema2.EncodingType;
+using System.Runtime.InteropServices;
 
 namespace SharpGLTF.Memory
 {
@@ -108,7 +109,7 @@ namespace SharpGLTF.Memory
         public void CopyTo(Vector4[] array, int arrayIndex)
         {
             Guard.NotNull(array, nameof(array));
-            this._CopyTo(array, arrayIndex);
+            _Accessor.CopyTo(MemoryMarshal.Cast<Vector4, float>(array.Slice(arrayIndex)), 4);
         }
 
         public void Fill(IEnumerable<Vector4> values, int dstStart = 0)
