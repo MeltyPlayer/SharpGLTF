@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace SharpGLTF.Transforms
@@ -405,20 +406,14 @@ namespace SharpGLTF.Transforms
         /// <returns>A weight ordered <see cref="SparseWeight8"/>.</returns>
         public static SparseWeight8 OrderedByWeight(in SparseWeight8 sparse)
         {
-            Span<IndexWeight> iw = stackalloc IndexWeight[8];
+            Span<IndexWeight> iwSpan = stackalloc IndexWeight[8];
 
-            iw[0] = (sparse.Index0, sparse.Weight0);
-            iw[1] = (sparse.Index1, sparse.Weight1);
-            iw[2] = (sparse.Index2, sparse.Weight2);
-            iw[3] = (sparse.Index3, sparse.Weight3);
-            iw[4] = (sparse.Index4, sparse.Weight4);
-            iw[5] = (sparse.Index5, sparse.Weight5);
-            iw[6] = (sparse.Index6, sparse.Weight6);
-            iw[7] = (sparse.Index7, sparse.Weight7);
+            var sparseSpan = MemoryMarshal.Cast<IndexWeight, SparseWeight8>(iwSpan);
+            sparseSpan[0] = sparse;
 
-            IndexWeight.BubbleSortByWeight(iw);
+            IndexWeight.BubbleSortByWeight(iwSpan);
 
-            return new SparseWeight8(iw);
+            return sparseSpan[0];
         }
 
         /// <summary>

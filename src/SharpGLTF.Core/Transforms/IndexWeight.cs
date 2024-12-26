@@ -73,6 +73,16 @@ namespace SharpGLTF.Transforms
             return false;
         }
 
+        public bool IsGreaterThanOrEqual(in IndexWeight other) {
+            var tw = Math.Abs(this.Weight);
+            var ow = Math.Abs(other.Weight);
+
+            if (tw > ow) return true;
+            if (tw == ow && this.Index <= other.Index) return true;
+
+            return false;
+        }
+
         #endregion
 
         #region operators
@@ -353,7 +363,7 @@ namespace SharpGLTF.Transforms
                     var kk = pairs[k];
                     var jj = pairs[j];
 
-                    if (kk.IsGreaterThan(jj)) continue;
+                    if (kk.IsGreaterThanOrEqual(jj)) continue;
 
                     pairs[k] = jj;
                     pairs[j] = kk;
