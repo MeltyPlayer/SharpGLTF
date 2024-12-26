@@ -75,10 +75,10 @@ namespace SharpGLTF.Geometry.VertexTypes
         {
             var columnFunc = _GetVertexBuilderAttributeFunc(dstAccessor.Attribute.Name);
 
-            if (dstAccessor.Attribute.Dimensions == DIMENSIONS.SCALAR) dstAccessor.AsScalarArray().Fill(srcVertices._GetColumn<TVertex, Single>(columnFunc));
-            if (dstAccessor.Attribute.Dimensions == DIMENSIONS.VEC2) dstAccessor.AsVector2Array().Fill(srcVertices._GetColumn<TVertex, Vector2>(columnFunc));
-            if (dstAccessor.Attribute.Dimensions == DIMENSIONS.VEC3) dstAccessor.AsVector3Array().Fill(srcVertices._GetColumn<TVertex, Vector3>(columnFunc));
-            if (dstAccessor.Attribute.Dimensions == DIMENSIONS.VEC4) dstAccessor.AsVector4Array().Fill(srcVertices._GetColumn<TVertex, Vector4>(columnFunc));
+            if (dstAccessor.Attribute.Dimensions == DIMENSIONS.SCALAR) dstAccessor.AsScalarArray().FillSpan(srcVertices._GetColumn<TVertex, Single>(columnFunc));
+            if (dstAccessor.Attribute.Dimensions == DIMENSIONS.VEC2) dstAccessor.AsVector2Array().FillSpan(srcVertices._GetColumn<TVertex, Vector2>(columnFunc));
+            if (dstAccessor.Attribute.Dimensions == DIMENSIONS.VEC3) dstAccessor.AsVector3Array().FillSpan(srcVertices._GetColumn<TVertex, Vector3>(columnFunc));
+            if (dstAccessor.Attribute.Dimensions == DIMENSIONS.VEC4) dstAccessor.AsVector4Array().FillSpan(srcVertices._GetColumn<TVertex, Vector4>(columnFunc));
         }
 
         public static MemoryAccessor CreateIndexMemoryAccessor(this IReadOnlyList<Int32> indices, ENCODING indexEncoding)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Collections;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 using BYTES = System.Memory<byte>;
 
@@ -26,6 +27,8 @@ namespace SharpGLTF.Memory
             this._Data = source.Slice(byteOffset);
             this._Getter = null;
             this._Setter = null;
+            this._Encoding = encoding;
+            this._Normalized = normalized;
             this._ByteStride = Math.Max(byteStride, enclen * dimensions);
             this._EncodedLen = enclen;
             this._ItemCount = this._Data.Length / this._ByteStride;
@@ -185,6 +188,9 @@ namespace SharpGLTF.Memory
 
         private readonly BYTES _Data;
 
+        private readonly ENCODING _Encoding;
+        private readonly bool _Normalized;
+
         private readonly int _ByteStride;
         private readonly int _EncodedLen;
 
@@ -218,6 +224,299 @@ namespace SharpGLTF.Memory
             {
                 if (!value._IsFinite()) throw new NotFiniteNumberException(nameof(value), value);
                 _Setter((rowIndex * _ByteStride) + (subIndex * _EncodedLen), value);
+            }
+        }
+        
+        public void CopyTo(Span<float> dst, int subCount) {
+            var rowCount = Math.Min(dst.Length / subCount, this._ItemCount);
+
+            if (_Normalized)
+            {
+                switch (_Encoding) {
+                    case ENCODING.BYTE:
+                    {
+                        var span = MemoryMarshal.Cast<byte, sbyte>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseSrcI = rowI * _ByteStride;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                dst[subCount * rowI + subI] = Math.Max(span[baseSrcI + subI] / 127.0f, -1);
+                            }
+                        }
+                        break;
+                    }
+                    case ENCODING.UNSIGNED_BYTE:
+                        {
+                            var span = this._Data.Span;
+                            for (var rowI = 0; rowI < rowCount; ++rowI)
+                            {
+                                var baseSrcI = rowI * _ByteStride;
+                                for (var subI = 0; subI < subCount; ++subI)
+                                {
+                                    dst[subCount * rowI + subI] = span[baseSrcI + subI] / 255.0f;
+                                }
+                            }
+                            break;
+                        }
+                    case ENCODING.SHORT:
+                        {
+                            var span = MemoryMarshal.Cast<byte, short>(this._Data.Span);
+                            for (var rowI = 0; rowI < rowCount; ++rowI)
+                            {
+                                var baseSrcI = (rowI * _ByteStride) >> 1;
+                                for (var subI = 0; subI < subCount; ++subI)
+                                {
+                                    dst[subCount * rowI + subI] = Math.Max(span[baseSrcI + subI] / 32767.0f, -1);
+                                }
+                            }
+                            break;
+                        }
+                    case ENCODING.UNSIGNED_SHORT:
+                        {
+                            var span = MemoryMarshal.Cast<byte, ushort>(this._Data.Span);
+                            for (var rowI = 0; rowI < rowCount; ++rowI)
+                            {
+                                var baseSrcI = (rowI * _ByteStride) >> 1;
+                                for (var subI = 0; subI < subCount; ++subI)
+                                {
+                                    dst[subCount * rowI + subI] = span[baseSrcI + subI] / 65535.0f;
+                                }
+                            }
+                            break;
+                        }
+                    default: throw new ArgumentOutOfRangeException();
+                }
+                return;
+            }
+
+            switch (_Encoding) {
+                case ENCODING.BYTE:
+                    {
+                        var span = MemoryMarshal.Cast<byte, sbyte>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseSrcI = rowI * _ByteStride;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                dst[subCount * rowI + subI] = span[baseSrcI + subI];
+                            }
+                        }
+                        break;
+                    }
+                case ENCODING.UNSIGNED_BYTE:
+                    {
+                        var span = this._Data.Span;
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseSrcI = rowI * _ByteStride;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                dst[subCount * rowI + subI] = span[baseSrcI + subI];
+                            }
+                        }
+                        break;
+                    }
+                case ENCODING.SHORT:
+                    {
+                        var span = MemoryMarshal.Cast<byte, short>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseSrcI = (rowI * _ByteStride) >> 1;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                dst[subCount * rowI + subI] = span[baseSrcI + subI];
+                            }
+                        }
+                        break;
+                    }
+                case ENCODING.UNSIGNED_SHORT:
+                    {
+                        var span = MemoryMarshal.Cast<byte, ushort>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseSrcI = (rowI * _ByteStride) >> 1;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                dst[subCount * rowI + subI] = span[baseSrcI + subI];
+                            }
+                        }
+                        break;
+                    }
+                case ENCODING.UNSIGNED_INT:
+                    {
+                        var span = MemoryMarshal.Cast<byte, uint>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseSrcI = (rowI * _ByteStride) >> 2;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                dst[subCount * rowI + subI] = span[baseSrcI + subI];
+                            }
+                        }
+                        break;
+                    }
+                case ENCODING.FLOAT:
+                    {
+                        var span = MemoryMarshal.Cast<byte, float>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseSrcI = (rowI * _ByteStride) >> 2;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                dst[subCount * rowI + subI] = span[baseSrcI + subI];
+                            }
+                        }
+                        break;
+                    }
+                default: throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public void Fill(ReadOnlySpan<float> src, int subCount, int offset = 0)
+        {
+            var rowCount = Math.Min(src.Length / subCount, this._ItemCount);
+
+            if (_Normalized)
+            {
+                switch (_Encoding) {
+                    case ENCODING.BYTE:
+                    {
+                        var span = MemoryMarshal.Cast<byte, sbyte>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseDstI = rowI * _ByteStride / _EncodedLen;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                span[baseDstI + subI] = (sbyte) Math.Round(src[subCount * rowI + subI] * 127.0f);
+                            }
+                        }
+                        break;
+                    }
+                    case ENCODING.UNSIGNED_BYTE:
+                        {
+                            var span = this._Data.Span;
+                            for (var rowI = 0; rowI < rowCount; ++rowI)
+                            {
+                                var baseDstI = rowI * _ByteStride / _EncodedLen;
+                                for (var subI = 0; subI < subCount; ++subI)
+                                {
+                                    span[baseDstI + subI] = (byte) (src[subCount * rowI + subI] * 255.0f);
+                                }
+                            }
+                            break;
+                        }
+                    case ENCODING.SHORT:
+                        {
+                            var span = MemoryMarshal.Cast<byte, short>(this._Data.Span);
+                            for (var rowI = 0; rowI < rowCount; ++rowI)
+                            {
+                                var baseDstI = rowI * _ByteStride / _EncodedLen;
+                                for (var subI = 0; subI < subCount; ++subI)
+                                {
+                                    span[baseDstI + subI] = (short) Math.Round(src[subCount * rowI + subI] * 32767.0f);
+                                }
+                            }
+                            break;
+                        }
+                    case ENCODING.UNSIGNED_SHORT:
+                        {
+                            var span = MemoryMarshal.Cast<byte, ushort>(this._Data.Span);
+                            for (var rowI = 0; rowI < rowCount; ++rowI)
+                            {
+                                var baseDstI = rowI * _ByteStride / _EncodedLen;
+                                for (var subI = 0; subI < subCount; ++subI)
+                                {
+                                    span[baseDstI + subI] = (ushort) (src[subCount * rowI + subI] * 65535.0f);
+                                }
+                            }
+                            break;
+                        }
+                    default: throw new ArgumentOutOfRangeException();
+                }
+                return;
+            }
+
+            switch (_Encoding) {
+                case ENCODING.BYTE:
+                    {
+                        var span = MemoryMarshal.Cast<byte, sbyte>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseDstI = rowI * _ByteStride / _EncodedLen;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                span[baseDstI + subI] = (sbyte) src[subCount * rowI + subI];
+                            }
+                        }
+                        break;
+                    }
+                case ENCODING.UNSIGNED_BYTE:
+                    {
+                        var span = this._Data.Span;
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseDstI = rowI * _ByteStride / _EncodedLen;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                span[baseDstI + subI] = (byte) src[subCount * rowI + subI];
+                            }
+                        }
+                        break;
+                    }
+                case ENCODING.SHORT:
+                    {
+                        var span = MemoryMarshal.Cast<byte, short>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseDstI = rowI * _ByteStride / _EncodedLen;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                span[baseDstI + subI] = (short) src[subCount * rowI + subI];
+                            }
+                        }
+                        break;
+                    }
+                case ENCODING.UNSIGNED_SHORT:
+                    {
+                        var span = MemoryMarshal.Cast<byte, ushort>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseDstI = rowI * _ByteStride / _EncodedLen;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                span[baseDstI + subI] = (ushort) src[subCount * rowI + subI];
+                            }
+                        }
+                        break;
+                    }
+                case ENCODING.UNSIGNED_INT:
+                    {
+                        var span = MemoryMarshal.Cast<byte, uint>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseDstI = rowI * _ByteStride / _EncodedLen;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                span[baseDstI + subI] = (uint) src[subCount * rowI + subI];
+                            }
+                        }
+                        break;
+                    }
+                case ENCODING.FLOAT:
+                    {
+                        var span = MemoryMarshal.Cast<byte, float>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseDstI = rowI * _ByteStride / _EncodedLen;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                span[baseDstI + subI] = src[subCount * rowI + subI];
+                            }
+                        }
+                        break;
+                    }
+                default: throw new ArgumentOutOfRangeException();
             }
         }
 
@@ -305,6 +604,11 @@ namespace SharpGLTF.Memory
         {
             Guard.NotNull(values, nameof(values));
             values._CopyTo(this, dstStart);
+        }
+
+        public void FillSpan(ReadOnlySpan<Single> values, int dstStart = 0)
+        {
+            _Accessor.Fill(values, 1, dstStart);
         }
 
         void IList<Single>.Insert(int index, Single item) { throw new NotSupportedException(); }
@@ -402,13 +706,18 @@ namespace SharpGLTF.Memory
         public void CopyTo(Vector2[] array, int arrayIndex)
         {
             Guard.NotNull(array, nameof(array));
-            this._CopyTo(array, arrayIndex);
+            _Accessor.CopyTo(MemoryMarshal.Cast<Vector2, float>(array.Slice(arrayIndex)), 2);
         }
 
         public void Fill(IEnumerable<Vector2> values, int dstStart = 0)
         {
             Guard.NotNull(values, nameof(values));
             values._CopyTo(this, dstStart);
+        }
+
+        public void FillSpan(ReadOnlySpan<Vector2> values, int dstStart = 0)
+        {
+            _Accessor.Fill(MemoryMarshal.Cast<Vector2, float>(values), 2, dstStart);
         }
 
         void IList<Vector2>.Insert(int index, Vector2 item) { throw new NotSupportedException(); }
@@ -507,13 +816,18 @@ namespace SharpGLTF.Memory
         public void CopyTo(Vector3[] array, int arrayIndex)
         {
             Guard.NotNull(array, nameof(array));
-            this._CopyTo(array, arrayIndex);
+            _Accessor.CopyTo(MemoryMarshal.Cast<Vector3, float>(array.Slice(arrayIndex)), 3);
         }
 
         public void Fill(IEnumerable<Vector3> values, int dstStart = 0)
         {
             Guard.NotNull(values, nameof(values));
             values._CopyTo(this, dstStart);
+        }
+
+        public void FillSpan(ReadOnlySpan<Vector3> values, int dstStart = 0)
+        {
+            _Accessor.Fill(MemoryMarshal.Cast<Vector3, float>(values), 3, dstStart);
         }
 
         void IList<Vector3>.Insert(int index, Vector3 item) { throw new NotSupportedException(); }
@@ -613,13 +927,18 @@ namespace SharpGLTF.Memory
         public void CopyTo(Vector4[] array, int arrayIndex)
         {
             Guard.NotNull(array, nameof(array));
-            this._CopyTo(array, arrayIndex);
+            _Accessor.CopyTo(MemoryMarshal.Cast<Vector4, float>(array.Slice(arrayIndex)), 3);
         }
 
         public void Fill(IEnumerable<Vector4> values, int dstStart = 0)
         {
             Guard.NotNull(values, nameof(values));
             values._CopyTo(this, dstStart);
+        }
+
+        public void FillSpan(ReadOnlySpan<Vector4> values, int dstStart = 0)
+        {
+            _Accessor.Fill(MemoryMarshal.Cast<Vector4, float>(values), 4, dstStart);
         }
 
         void IList<Vector4>.Insert(int index, Vector4 item) { throw new NotSupportedException(); }
@@ -697,13 +1016,18 @@ namespace SharpGLTF.Memory
         public void CopyTo(Quaternion[] array, int arrayIndex)
         {
             Guard.NotNull(array, nameof(array));
-            this._CopyTo(array, arrayIndex);
+            _Accessor.CopyTo(MemoryMarshal.Cast<Quaternion, float>(array.Slice(arrayIndex)), 4);
         }
 
         public void Fill(IEnumerable<Quaternion> values, int dstStart = 0)
         {
             Guard.NotNull(values, nameof(values));
             values._CopyTo(this, dstStart);
+        }
+
+        public void FillSpan(ReadOnlySpan<Quaternion> values, int dstStart = 0)
+        {
+            _Accessor.Fill(MemoryMarshal.Cast<Quaternion, float>(values), 3, dstStart);
         }
 
         void IList<Quaternion>.Insert(int index, Quaternion item) { throw new NotSupportedException(); }
