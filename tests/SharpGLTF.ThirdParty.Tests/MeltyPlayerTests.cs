@@ -125,8 +125,12 @@ namespace SharpGLTF.ThirdParty
 
             // generate heightmap
 
-            for (var y = 0; y < gridSize; ++y) {
-                for (var x = 0; x < gridSize; ++x) {
+            var primitiveBuilder = mesh.UsePrimitive(material);
+            var sparseWeight = SparseWeight8.Create((0, 1));
+            for (var y = 0; y < gridSize; ++y)
+            {
+                for (var x = 0; x < gridSize; ++x)
+                {
                     var vertices = new (float X, float Y)[]
                     {
                         (x, y),
@@ -139,11 +143,11 @@ namespace SharpGLTF.ThirdParty
                                            new Vector4(0, pos.X / gridSize, pos.Y / gridSize, 1),
                                            new Vector2(pos.X / gridSize, pos.Y / gridSize),
                                            new Vector2(pos.X / gridSize, pos.Y / gridSize))
-                             .WithSkinning(SparseWeight8.Create((0, 1))))
+                             .WithSkinning(sparseWeight))
                      .ToArray();
 
-                    mesh.UsePrimitive(material).AddTriangle(vertices[0], vertices[1], vertices[2]);
-                    mesh.UsePrimitive(material).AddTriangle(vertices[1], vertices[2], vertices[3]);
+                    primitiveBuilder.AddTriangle(vertices[0], vertices[1], vertices[2]);
+                    primitiveBuilder.AddTriangle(vertices[1], vertices[2], vertices[3]);
                 }
             }
 
@@ -163,7 +167,8 @@ namespace SharpGLTF.ThirdParty
                 "huge_scene.obj",
             };
 
-            foreach (var outFile in outFiles) {
+            foreach (var outFile in outFiles)
+            {
                 gltf.AttachToCurrentTest(outFile);
 
                 GC.WaitForPendingFinalizers();
