@@ -215,22 +215,24 @@ namespace SharpGLTF.Geometry
                     else skinning = Transforms.SparseWeight8.Create(Joints0[i], Weights0[i]);
                 }
 
+                var transformMatrix = transform.GetTransform(skinning);
+
                 if (this.Positions != null)
                 {
                     _FillMorphData(morphPositions, vc => vc.Positions[i]);
-                    Positions[i] = transform.TransformPosition(Positions[i], morphPositions, skinning);
+                    Positions[i] = transform.TransformPosition(Positions[i], morphPositions, transformMatrix);
                 }
 
                 if (this.Normals != null)
                 {
                     _FillMorphData(morphNormals, vc => vc.Normals[i]);
-                    Normals[i] = transform.TransformNormal(Normals[i], morphNormals, skinning);
+                    Normals[i] = transform.TransformNormal(Normals[i], morphNormals, transformMatrix);
                 }
 
                 if (this.Tangents != null)
                 {
                     _FillMorphData(morphTangents, vc => vc.Tangents[i]);
-                    Tangents[i] = transform.TransformTangent(Tangents[i], morphTangents, skinning);
+                    Tangents[i] = transform.TransformTangent(Tangents[i], morphTangents, transformMatrix);
                 }
 
                 if (transform is Transforms.IMaterialTransform morphMaterial)
