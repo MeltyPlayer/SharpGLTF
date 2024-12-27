@@ -135,7 +135,7 @@ namespace SharpGLTF.Schema2
             var buffer = root.CreateBufferView(input.Count * 4);
             var accessor = root.CreateAccessor("Animation.Input");
 
-            accessor.SetData(buffer, 0, input.Count, DimensionType.SCALAR, EncodingType.FLOAT, false);
+            accessor._SetDataWithoutUpdatingBounds(buffer, 0, input.Count, DimensionType.SCALAR, EncodingType.FLOAT, false);
 
             Memory.EncodedArrayUtils._CopyTo(input, accessor.AsScalarArray());
 
@@ -157,7 +157,7 @@ namespace SharpGLTF.Schema2
 
             var accessor = root.CreateAccessor("Animation.Output");
 
-            accessor.SetData(buffer, 0, output.Count, DimensionType.VEC3, EncodingType.FLOAT, false);
+            accessor._SetDataWithoutUpdatingBounds(buffer, 0, output.Count, DimensionType.VEC3, EncodingType.FLOAT, false);
 
             Memory.EncodedArrayUtils._CopyTo(output, accessor.AsVector3Array());
 
@@ -176,7 +176,7 @@ namespace SharpGLTF.Schema2
             var buffer = root.CreateBufferView(output.Count * 4 * 4);
             var accessor = root.CreateAccessor("Animation.Output");
 
-            accessor.SetData(buffer, 0, output.Count, DimensionType.VEC4, EncodingType.FLOAT, false);
+            accessor._SetDataWithoutUpdatingBounds(buffer, 0, output.Count, DimensionType.VEC4, EncodingType.FLOAT, false);
 
             Memory.EncodedArrayUtils._CopyTo(output, accessor.AsQuaternionArray());
 
@@ -215,7 +215,7 @@ namespace SharpGLTF.Schema2
             var buffer = root.CreateBufferView(itemCount * 4 * itemsStride);
             var accessor = root.CreateAccessor("Animation.Output");
 
-            accessor.SetData(buffer, 0, itemCount * itemsStride, DimensionType.SCALAR, EncodingType.FLOAT, false);
+            accessor._SetDataWithoutUpdatingBounds(buffer, 0, itemCount * itemsStride, DimensionType.SCALAR, EncodingType.FLOAT, false);
 
             var dst = accessor.AsScalarArray();
 

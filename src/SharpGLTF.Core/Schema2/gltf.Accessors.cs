@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Text;
 using SharpGLTF.Memory;
 
 using VALIDATIONCTX = SharpGLTF.Validation.ValidationContext;
@@ -197,6 +198,12 @@ namespace SharpGLTF.Schema2
         /// <param name="normalized">The item normalization mode.</param>
         public void SetData(BufferView buffer, int bufferByteOffset, int itemCount, DimensionType dimensions, EncodingType encoding, Boolean normalized)
         {
+            _SetDataWithoutUpdatingBounds(buffer, bufferByteOffset, itemCount, dimensions, encoding, normalized);
+            UpdateBounds();
+        }
+
+        internal void _SetDataWithoutUpdatingBounds(BufferView buffer, int bufferByteOffset, int itemCount, DimensionType dimensions, EncodingType encoding, Boolean normalized)
+        {
             Guard.NotNull(buffer, nameof(buffer));
             Guard.MustShareLogicalParent(this, buffer, nameof(buffer));
             Guard.MustBeGreaterThanOrEqualTo(bufferByteOffset, _byteOffsetMinimum, nameof(bufferByteOffset));
@@ -212,7 +219,6 @@ namespace SharpGLTF.Schema2
             this._componentType = encoding;
             this._normalized = normalized.AsNullable(_normalizedDefault);
 
-            UpdateBounds();
         }
 
         public IList<Matrix3x2> AsMatrix2x2Array()
