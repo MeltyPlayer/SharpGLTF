@@ -250,7 +250,7 @@ namespace SharpGLTF.Geometry.VertexTypes
             // Apparently the consensus is that weights are required to be normalized.
             // More here: https://github.com/KhronosGroup/glTF/issues/1213
 
-            var sparse = Transforms.SparseWeight8.OrderedByWeight(vertex.GetBindings());
+            var sparse = vertex.GetBindings();
 
             var sum = sparse.WeightSum;
 
