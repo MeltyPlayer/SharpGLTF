@@ -10,7 +10,7 @@ namespace SharpGLTF.Memory
     /// </summary>
     /// <typeparam name="T">An unmanage structure type.</typeparam>
     [System.Diagnostics.DebuggerDisplay("Sparse {typeof(T).Name} Accessor {Count}")]
-    public readonly struct SparseArray<T> : IList<T>, IReadOnlyList<T>
+    public readonly struct SparseArray<T> : IAccessorList<T>
         where T : unmanaged
     {
         #region lifecycle
@@ -78,6 +78,14 @@ namespace SharpGLTF.Memory
         void ICollection<T>.Clear() { throw new NotSupportedException(); }
 
         bool ICollection<T>.Remove(T item) { throw new NotSupportedException(); }
+
+        void IAccessorList<T>.ForEach(IAccessorList<T>.ForEachHandler handler)
+        {
+            for (var i = 0; i < this.Count; ++i)
+            {
+                handler(i, this[i]);
+            }
+        }
 
         #endregion
     }

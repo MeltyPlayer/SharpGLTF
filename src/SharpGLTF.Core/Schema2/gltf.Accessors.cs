@@ -320,7 +320,7 @@ namespace SharpGLTF.Schema2
             SetData(buffer, bufferByteOffset, itemCount, dimensions, encoding, normalized);
         }
 
-        public IList<Single> AsScalarArray()
+        public IAccessorList<Single> AsScalarArray()
         {
             var memory = _GetMemoryAccessor();
 
@@ -330,7 +330,7 @@ namespace SharpGLTF.Schema2
             return MemoryAccessor.CreateScalarSparseArray(memory, sparseKV.Key, sparseKV.Value);
         }
 
-        public IList<Vector2> AsVector2Array()
+        public IAccessorList<Vector2> AsVector2Array()
         {
             var memory = _GetMemoryAccessor();
 
@@ -340,7 +340,7 @@ namespace SharpGLTF.Schema2
             return MemoryAccessor.CreateVector2SparseArray(memory, sparseKV.Key, sparseKV.Value);
         }
 
-        public IList<Vector3> AsVector3Array()
+        public IAccessorList<Vector3> AsVector3Array()
         {
             var memory = _GetMemoryAccessor();
 
@@ -350,7 +350,7 @@ namespace SharpGLTF.Schema2
             return MemoryAccessor.CreateVector3SparseArray(memory, sparseKV.Key, sparseKV.Value);
         }
 
-        public IList<Vector4> AsVector4Array()
+        public IAccessorList<Vector4> AsVector4Array()
         {
             var memory = _GetMemoryAccessor();
 
@@ -360,7 +360,7 @@ namespace SharpGLTF.Schema2
             return MemoryAccessor.CreateVector4SparseArray(memory, sparseKV.Key, sparseKV.Value);
         }
 
-        public IList<Vector4> AsColorArray(Single defaultW = 1)
+        public IAccessorList<Vector4> AsColorArray(Single defaultW = 1)
         {
             var memory = _GetMemoryAccessor();
 

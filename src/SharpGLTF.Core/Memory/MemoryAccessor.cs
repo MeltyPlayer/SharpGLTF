@@ -337,7 +337,7 @@ namespace SharpGLTF.Memory
             this._Data = default;
         }
 
-        public static IList<Single> CreateScalarSparseArray(MemoryAccessor bottom, IntegerArray topKeys, MemoryAccessor topValues)
+        public static IAccessorList<Single> CreateScalarSparseArray(MemoryAccessor bottom, IntegerArray topKeys, MemoryAccessor topValues)
         {
             Guard.NotNull(bottom, nameof(bottom));
             Guard.NotNull(topValues, nameof(topValues));
@@ -349,7 +349,7 @@ namespace SharpGLTF.Memory
             return new SparseArray<Single>(bottom.AsScalarArray(), topValues.AsScalarArray(), topKeys);
         }
 
-        public static IList<Vector2> CreateVector2SparseArray(MemoryAccessor bottom, IntegerArray topKeys, MemoryAccessor topValues)
+        public static IAccessorList<Vector2> CreateVector2SparseArray(MemoryAccessor bottom, IntegerArray topKeys, MemoryAccessor topValues)
         {
             Guard.NotNull(bottom, nameof(bottom));
             Guard.NotNull(topValues, nameof(topValues));
@@ -361,7 +361,7 @@ namespace SharpGLTF.Memory
             return new SparseArray<Vector2>(bottom.AsVector2Array(), topValues.AsVector2Array(), topKeys);
         }
 
-        public static IList<Vector3> CreateVector3SparseArray(MemoryAccessor bottom, IntegerArray topKeys, MemoryAccessor topValues)
+        public static IAccessorList<Vector3> CreateVector3SparseArray(MemoryAccessor bottom, IntegerArray topKeys, MemoryAccessor topValues)
         {
             Guard.NotNull(bottom, nameof(bottom));
             Guard.NotNull(topValues, nameof(topValues));
@@ -373,7 +373,7 @@ namespace SharpGLTF.Memory
             return new SparseArray<Vector3>(bottom.AsVector3Array(), topValues.AsVector3Array(), topKeys);
         }
 
-        public static IList<Vector4> CreateVector4SparseArray(MemoryAccessor bottom, IntegerArray topKeys, MemoryAccessor topValues)
+        public static IAccessorList<Vector4> CreateVector4SparseArray(MemoryAccessor bottom, IntegerArray topKeys, MemoryAccessor topValues)
         {
             Guard.NotNull(bottom, nameof(bottom));
             Guard.NotNull(topValues, nameof(topValues));
@@ -385,7 +385,7 @@ namespace SharpGLTF.Memory
             return new SparseArray<Vector4>(bottom.AsVector4Array(), topValues.AsVector4Array(), topKeys);
         }
 
-        public static IList<Vector4> CreateColorSparseArray(MemoryAccessor bottom, IntegerArray topKeys, MemoryAccessor topValues, Single defaultW = 1)
+        public static IAccessorList<Vector4> CreateColorSparseArray(MemoryAccessor bottom, IntegerArray topKeys, MemoryAccessor topValues, Single defaultW = 1)
         {
             Guard.NotNull(bottom, nameof(bottom));
             Guard.NotNull(topValues, nameof(topValues));

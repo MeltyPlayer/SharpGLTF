@@ -694,7 +694,7 @@ namespace SharpGLTF.Memory
     /// Wraps an encoded <see cref="BYTES"/> and exposes it as an <see cref="IList{single}"/>.
     /// </summary>
     [System.Diagnostics.DebuggerDisplay("Float[{Count}]")]
-    public readonly struct ScalarArray : IList<Single>, IReadOnlyList<Single>
+    public readonly struct ScalarArray : IAccessorList<Single>
     {
         #region constructors
 
@@ -778,6 +778,11 @@ namespace SharpGLTF.Memory
             _Accessor.Fill(values, 1, dstStart);
         }
 
+        public void ForEach(IAccessorList<Single>.ForEachHandler handler)
+        {
+            _Accessor._ForEach(1, (i, span) => handler(i, span[0]));
+        }
+
         void IList<Single>.Insert(int index, Single item) { throw new NotSupportedException(); }
 
         void IList<Single>.RemoveAt(int index) { throw new NotSupportedException(); }
@@ -795,7 +800,7 @@ namespace SharpGLTF.Memory
     /// Wraps an encoded <see cref="BYTES"/> and exposes it as an <see cref="IList{Vector2}"/>.
     /// </summary>
     [System.Diagnostics.DebuggerDisplay("Vector2[{Count}]")]
-    public readonly struct Vector2Array : IList<Vector2>, IReadOnlyList<Vector2>
+    public readonly struct Vector2Array : IAccessorList<Vector2>
     {
         #region constructors
 
@@ -887,6 +892,11 @@ namespace SharpGLTF.Memory
             _Accessor.Fill(MemoryMarshal.Cast<Vector2, float>(values), 2, dstStart);
         }
 
+        public void ForEach(IAccessorList<Vector2>.ForEachHandler handler)
+        {
+            _Accessor._ForEach(2, (i, span) => handler(i, MemoryMarshal.Cast<float, Vector2>(span)[0]));
+        }
+
         void IList<Vector2>.Insert(int index, Vector2 item) { throw new NotSupportedException(); }
 
         void IList<Vector2>.RemoveAt(int index) { throw new NotSupportedException(); }
@@ -904,7 +914,7 @@ namespace SharpGLTF.Memory
     /// Wraps an encoded <see cref="BYTES"/> and exposes it as an <see cref="IList{Vector3}"/>.
     /// </summary>
     [System.Diagnostics.DebuggerDisplay("Vector3[{Count}]")]
-    public readonly struct Vector3Array : IList<Vector3>, IReadOnlyList<Vector3>
+    public readonly struct Vector3Array : IAccessorList<Vector3>
     {
         #region constructors
 
@@ -997,6 +1007,11 @@ namespace SharpGLTF.Memory
             _Accessor.Fill(MemoryMarshal.Cast<Vector3, float>(values), 3, dstStart);
         }
 
+        public void ForEach(IAccessorList<Vector3>.ForEachHandler handler)
+        {
+            _Accessor._ForEach(3, (i, span) => handler(i, MemoryMarshal.Cast<float, Vector3>(span)[0]));
+        }
+
         void IList<Vector3>.Insert(int index, Vector3 item) { throw new NotSupportedException(); }
 
         void IList<Vector3>.RemoveAt(int index) { throw new NotSupportedException(); }
@@ -1014,7 +1029,7 @@ namespace SharpGLTF.Memory
     /// Wraps an encoded <see cref="BYTES"/> and exposes it as an <see cref="IList{Vector4}"/>.
     /// </summary>
     [System.Diagnostics.DebuggerDisplay("Vector4[{Count}]")]
-    public readonly struct Vector4Array : IList<Vector4>, IReadOnlyList<Vector4>
+    public readonly struct Vector4Array : IAccessorList<Vector4>
     {
         #region constructors
 
@@ -1106,6 +1121,11 @@ namespace SharpGLTF.Memory
         public void FillSpan(ReadOnlySpan<Vector4> values, int dstStart = 0)
         {
             _Accessor.Fill(MemoryMarshal.Cast<Vector4, float>(values), 4, dstStart);
+        }
+
+        public void ForEach(IAccessorList<Vector4>.ForEachHandler handler)
+        {
+            _Accessor._ForEach(4, (i, span) => handler(i, MemoryMarshal.Cast<float, Vector4>(span)[0]));
         }
 
         void IList<Vector4>.Insert(int index, Vector4 item) { throw new NotSupportedException(); }

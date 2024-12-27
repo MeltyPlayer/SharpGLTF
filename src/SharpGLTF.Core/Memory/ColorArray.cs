@@ -15,7 +15,7 @@ namespace SharpGLTF.Memory
     /// Wraps an encoded <see cref="BYTES"/> and exposes it as an array of <see cref="Vector4"/> values.
     /// </summary>
     [System.Diagnostics.DebuggerDisplay("Color4[{Count}]")]
-    public readonly struct ColorArray : IList<Vector4>, IReadOnlyList<Vector4>
+    public readonly struct ColorArray : IAccessorList<Vector4>
     {
         #region constructors
 
@@ -109,13 +109,29 @@ namespace SharpGLTF.Memory
         public void CopyTo(Vector4[] array, int arrayIndex)
         {
             Guard.NotNull(array, nameof(array));
-            _Accessor.CopyTo(MemoryMarshal.Cast<Vector4, float>(array.Slice(arrayIndex)), 4);
+            if (_Dimensions >= 4)
+            {
+                _Accessor.CopyTo(MemoryMarshal.Cast<Vector4, float>(array.Slice(arrayIndex)), 4);
+            } else {
+                this._CopyTo(array, arrayIndex);
+            }
         }
 
         public void Fill(IEnumerable<Vector4> values, int dstStart = 0)
         {
             Guard.NotNull(values, nameof(values));
             values._CopyTo(this, dstStart);
+        }
+
+        public void ForEach(IAccessorList<Vector4>.ForEachHandler handler)
+        {
+            if (_Dimensions >= 4)
+            {
+                _Accessor._ForEach(4, (i, span) => handler(i, MemoryMarshal.Cast<float, Vector4>(span)[0]));
+            } else {
+                var defaultW = this._DefaultW;
+                _Accessor._ForEach(3, (i, span) => handler(i, new Vector4(MemoryMarshal.Cast<float, Vector3>(span)[0], defaultW)));
+            }
         }
 
         void IList<Vector4>.Insert(int index, Vector4 item) { throw new NotSupportedException(); }

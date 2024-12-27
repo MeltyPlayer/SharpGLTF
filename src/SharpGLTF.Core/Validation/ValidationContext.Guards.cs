@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using SharpGLTF.Memory;
 
 namespace SharpGLTF.Validation
 {
@@ -293,69 +294,64 @@ namespace SharpGLTF.Validation
             return this;
         }
 
-        public OUTTYPE ArePositions(PARAMNAME pname, IList<System.Numerics.Vector3> positions)
+        public OUTTYPE ArePositions(PARAMNAME pname, IAccessorList<System.Numerics.Vector3> positions)
         {
             Guard.NotNull(positions, nameof(positions));
 
-            for (int i = 0; i < positions.Count; ++i)
-            {
-                IsPosition((pname, i), positions[i]);
-            }
+            var me = this;
+            positions.ForEach((i, position) => me.IsPosition((pname, i), position));
 
             return this;
         }
 
-        public OUTTYPE AreNormals(PARAMNAME pname, IList<System.Numerics.Vector3> normals)
+        public OUTTYPE AreNormals(PARAMNAME pname, IAccessorList<System.Numerics.Vector3> normals)
         {
             Guard.NotNull(normals, nameof(normals));
 
-            for (int i = 0; i < normals.Count; ++i)
-            {
-                IsNormal((pname, i), normals[i]);
-            }
+            var me = this;
+            normals.ForEach((i, normal) => me.IsNormal((pname, i), normal));
 
             return this;
         }
 
-        public OUTTYPE AreTangents(PARAMNAME pname, IList<System.Numerics.Vector4> tangents)
+        public OUTTYPE AreTangents(PARAMNAME pname, IAccessorList<System.Numerics.Vector4> tangents)
         {
             Guard.NotNull(tangents, nameof(tangents));
 
-            for (int i = 0; i < tangents.Count; ++i)
-            {
-                if (!tangents[i].IsValidTangent()) _DataThrow((pname, i), "Invalid Tangent");
-            }
+            var me = this;
+            tangents.ForEach((i, tangent) => {
+                if (!tangent.IsValidTangent()) me._DataThrow((pname, i), "Invalid Tangent");
+            });
 
             return this;
         }
 
-        public OUTTYPE AreRotations(PARAMNAME pname, IList<System.Numerics.Quaternion> rotations)
+        public OUTTYPE AreRotations(PARAMNAME pname, IAccessorList<System.Numerics.Quaternion> rotations)
         {
             Guard.NotNull(rotations, nameof(rotations));
 
-            for (int i = 0; i < rotations.Count; ++i)
-            {
-                if (!rotations[i].IsNormalized()) _DataThrow((pname, i), "Invalid Rotation");
-            }
+            var me = this;
+            rotations.ForEach((i, rotation) => {
+                if (!rotation.IsNormalized()) me._DataThrow((pname, i), "Invalid Rotation");
+            });
 
             return this;
         }
 
-        public OUTTYPE AreJoints(PARAMNAME pname, IList<System.Numerics.Vector4> joints, int skinsMaxJointCount)
+        public OUTTYPE AreJoints(PARAMNAME pname, IAccessorList<System.Numerics.Vector4> joints, int skinsMaxJointCount)
         {
             Guard.NotNull(joints, nameof(joints));
 
-            for (int i = 0; i < joints.Count; ++i)
-            {
-                var jjjj = joints[i];
+            var me = this;
+            joints.ForEach((i, jjjj) => {
 
-                if (!jjjj._IsFinite()) _DataThrow((pname, i), "Is not finite");
+                if (!jjjj._IsFinite()) me._DataThrow((pname, i), "Is not finite");
 
-                if (jjjj.X < 0 || jjjj.X >= skinsMaxJointCount) _DataThrow((pname, i), "Is out of bounds");
-                if (jjjj.Y < 0 || jjjj.Y >= skinsMaxJointCount) _DataThrow((pname, i), "Is out of bounds");
-                if (jjjj.Z < 0 || jjjj.Z >= skinsMaxJointCount) _DataThrow((pname, i), "Is out of bounds");
-                if (jjjj.W < 0 || jjjj.W >= skinsMaxJointCount) _DataThrow((pname, i), "Is out of bounds");
-            }
+                if (jjjj.X < 0 || jjjj.X >= skinsMaxJointCount) me._DataThrow((pname, i), "Is out of bounds");
+                if (jjjj.Y < 0 || jjjj.Y >= skinsMaxJointCount) me._DataThrow((pname, i), "Is out of bounds");
+                if (jjjj.Z < 0 || jjjj.Z >= skinsMaxJointCount) me._DataThrow((pname, i), "Is out of bounds");
+                if (jjjj.W < 0 || jjjj.W >= skinsMaxJointCount) me._DataThrow((pname, i), "Is out of bounds");
+            });
 
             return this;
         }
