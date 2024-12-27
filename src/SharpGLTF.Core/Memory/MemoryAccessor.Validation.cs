@@ -294,6 +294,24 @@ namespace SharpGLTF.Memory
                 dimensions, memory.Attribute.Encoding,
                 false); // bounds checks are done without normalization; https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#_accessor_max
 
+            array._ForEach(
+                dimensions, 
+                (i, span) => {
+                    for (int j = 0; j < dimensions; ++j)
+                    {
+                        var v = span[j];
+
+                        // if (!v._IsFinite()) result.AddError(this, $"Item[{j}][{i}] is not a finite number: {v}");
+
+                        var axisMin = minimum[j];
+                        var axisMax = maximum[j];
+
+                        if (v < axisMin || v > axisMax) throw new ArgumentOutOfRangeException(nameof(memory), $"Value[{i}] is out of bounds. {axisMin} <= {v} <= {axisMax}");
+
+                        // if (v < min || v > max) result.AddError(this, $"Item[{j}][{i}] is out of bounds. {min} <= {v} <= {max}");
+                    }
+                });
+
             var current = new float[dimensions];
 
             for (int i = 0; i < array.Count; ++i)
@@ -304,14 +322,6 @@ namespace SharpGLTF.Memory
                 {
                     var v = current[j];
 
-                    // if (!v._IsFinite()) result.AddError(this, $"Item[{j}][{i}] is not a finite number: {v}");
-
-                    var axisMin = minimum[j];
-                    var axisMax = maximum[j];
-
-                    if (v < axisMin || v > axisMax) throw new ArgumentOutOfRangeException(nameof(memory), $"Value[{i}] is out of bounds. {axisMin} <= {v} <= {axisMax}");
-
-                    // if (v < min || v > max) result.AddError(this, $"Item[{j}][{i}] is out of bounds. {min} <= {v} <= {max}");
                 }
             }
         }

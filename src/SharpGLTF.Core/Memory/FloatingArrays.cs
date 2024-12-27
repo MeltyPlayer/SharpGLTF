@@ -525,12 +525,12 @@ namespace SharpGLTF.Memory
             }
         }
 
-        public void GetMinAndMax(IList<double> mins, IList<double> maxes)
-        {
-            var subCount = mins.Count;
-            Guard.MustBeEqualTo(subCount, maxes.Count, nameof(subCount));
+        internal delegate void ForEachHandler(int index, ReadOnlySpan<float> element);
 
+        internal void _ForEach(int subCount, ForEachHandler handler)
+        {
             var rowCount = this._ItemCount;
+            Span<float> subElements = stackalloc float[subCount];
 
             if (_Normalized)
             {
@@ -544,10 +544,9 @@ namespace SharpGLTF.Memory
                             var baseSrcI = rowI * _ByteStride;
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                var value = Math.Max(span[baseSrcI + subI] / 127.0f, -1);
-                                mins[subI] = Math.Min(mins[subI], value);
-                                maxes[subI] = Math.Max(maxes[subI], value);
+                                subElements[subI] = Math.Max(span[baseSrcI + subI] / 127.0f, -1);
                             }
+                            handler(rowI, subElements);
                         }
                         break;
                     }
@@ -559,10 +558,9 @@ namespace SharpGLTF.Memory
                                 var baseSrcI = rowI * _ByteStride;
                                 for (var subI = 0; subI < subCount; ++subI)
                                 {
-                                    var value = span[baseSrcI + subI] / 255.0f;
-                                    mins[subI] = Math.Min(mins[subI], value);
-                                    maxes[subI] = Math.Max(maxes[subI], value);
+                                    subElements[subI] = span[baseSrcI + subI] / 255.0f;
                                 }
+                                handler(rowI, subElements);
                             }
                             break;
                         }
@@ -574,10 +572,9 @@ namespace SharpGLTF.Memory
                                 var baseSrcI = (rowI * _ByteStride) >> 1;
                                 for (var subI = 0; subI < subCount; ++subI)
                                 {
-                                    var value = Math.Max(span[baseSrcI + subI] / 32767.0f, -1);
-                                    mins[subI] = Math.Min(mins[subI], value);
-                                    maxes[subI] = Math.Max(maxes[subI], value);
+                                    subElements[subI] = Math.Max(span[baseSrcI + subI] / 32767.0f, -1);
                                 }
+                                handler(rowI, subElements);
                             }
                             break;
                         }
@@ -589,10 +586,9 @@ namespace SharpGLTF.Memory
                                 var baseSrcI = (rowI * _ByteStride) >> 1;
                                 for (var subI = 0; subI < subCount; ++subI)
                                 {
-                                    var value = span[baseSrcI + subI] / 65535.0f;
-                                    mins[subI] = Math.Min(mins[subI], value);
-                                    maxes[subI] = Math.Max(maxes[subI], value);
+                                    subElements[subI] = span[baseSrcI + subI] / 65535.0f;
                                 }
+                                handler(rowI, subElements);
                             }
                             break;
                         }
@@ -611,10 +607,9 @@ namespace SharpGLTF.Memory
                             var baseSrcI = rowI * _ByteStride;
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                var value = span[baseSrcI + subI];
-                                mins[subI] = Math.Min(mins[subI], value);
-                                maxes[subI] = Math.Max(maxes[subI], value);
+                                subElements[subI] = span[baseSrcI + subI];
                             }
+                            handler(rowI, subElements);
                         }
                         break;
                     }
@@ -626,10 +621,9 @@ namespace SharpGLTF.Memory
                             var baseSrcI = rowI * _ByteStride;
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                var value = span[baseSrcI + subI];
-                                mins[subI] = Math.Min(mins[subI], value);
-                                maxes[subI] = Math.Max(maxes[subI], value);
+                                subElements[subI] = span[baseSrcI + subI];
                             }
+                            handler(rowI, subElements);
                         }
                         break;
                     }
@@ -641,10 +635,9 @@ namespace SharpGLTF.Memory
                             var baseSrcI = (rowI * _ByteStride) >> 1;
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                var value = span[baseSrcI + subI];
-                                mins[subI] = Math.Min(mins[subI], value);
-                                maxes[subI] = Math.Max(maxes[subI], value);
+                                subElements[subI] = span[baseSrcI + subI];
                             }
+                            handler(rowI, subElements);
                         }
                         break;
                     }
@@ -656,10 +649,9 @@ namespace SharpGLTF.Memory
                             var baseSrcI = (rowI * _ByteStride) >> 1;
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                var value = span[baseSrcI + subI];
-                                mins[subI] = Math.Min(mins[subI], value);
-                                maxes[subI] = Math.Max(maxes[subI], value);
+                                subElements[subI] = span[baseSrcI + subI];
                             }
+                            handler(rowI, subElements);
                         }
                         break;
                     }
@@ -671,10 +663,9 @@ namespace SharpGLTF.Memory
                             var baseSrcI = (rowI * _ByteStride) >> 2;
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                var value = span[baseSrcI + subI];
-                                mins[subI] = Math.Min(mins[subI], value);
-                                maxes[subI] = Math.Max(maxes[subI], value);
+                                subElements[subI] = span[baseSrcI + subI];
                             }
+                            handler(rowI, subElements);
                         }
                         break;
                     }
@@ -686,10 +677,9 @@ namespace SharpGLTF.Memory
                             var baseSrcI = (rowI * _ByteStride) >> 2;
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                var value = span[baseSrcI + subI];
-                                mins[subI] = Math.Min(mins[subI], value);
-                                maxes[subI] = Math.Max(maxes[subI], value);
+                                subElements[subI] = span[baseSrcI + subI];
                             }
+                            handler(rowI, subElements);
                         }
                         break;
                     }
@@ -1777,9 +1767,9 @@ namespace SharpGLTF.Memory
             for (int i = 0; i < count; ++i) dstItem[i] = _Accessor[index, i];
         }
 
-        public void GetMinAndMax(IList<double> mins, IList<double> maxes)
+        internal void _ForEach(int subCount, FloatingAccessor.ForEachHandler handler)
         {
-            _Accessor.GetMinAndMax(mins, maxes);
+            _Accessor._ForEach(subCount, handler);
         }
 
         public IEnumerator<Single[]> GetEnumerator() { return new EncodedArrayEnumerator<Single[]>(this); }

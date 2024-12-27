@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-
+using System.Runtime.CompilerServices;
 using SharpGLTF.Memory;
 
 using VALIDATIONCTX = SharpGLTF.Validation.ValidationContext;
@@ -170,7 +170,16 @@ namespace SharpGLTF.Schema2
             }
 
             var array = new MultiArray(this.SourceBufferView.Content, this.ByteOffset, this.Count, this.SourceBufferView.ByteStride, dimensions, this.Encoding, false);
-            array.GetMinAndMax(this._min, this._max);
+            array._ForEach(
+                dimensions, 
+                (_, span) => {
+                    for (int i = 0; i < dimensions; ++i)
+                    {
+                        var value = span[i];
+                        this._min[i] = Math.Min(this._min[i], value);
+                        this._max[i] = Math.Max(this._max[i], value);
+                    }
+                });
         }
 
         #endregion
