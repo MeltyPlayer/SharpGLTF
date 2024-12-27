@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 using SharpGLTF.Memory;
@@ -355,19 +356,15 @@ namespace SharpGLTF.Geometry.VertexTypes
         public void SetBindings(params (int Index, float Weight)[] bindings) { this = new VertexJoints8(bindings); }
 
         /// <inheritdoc/>
-        public readonly (int Index, float Weight) GetBinding(int index)
+        public readonly unsafe (int Index, float Weight) GetBinding(int index)
         {
-            switch (index)
-            {
-                case 0: return ((int)this.Joints0.X, this.Weights0.X);
-                case 1: return ((int)this.Joints0.Y, this.Weights0.Y);
-                case 2: return ((int)this.Joints0.Z, this.Weights0.Z);
-                case 3: return ((int)this.Joints0.W, this.Weights0.W);
-                case 4: return ((int)this.Joints1.X, this.Weights1.X);
-                case 5: return ((int)this.Joints1.Y, this.Weights1.Y);
-                case 6: return ((int)this.Joints1.Z, this.Weights1.Z);
-                case 7: return ((int)this.Joints1.W, this.Weights1.W);
-                default: throw new ArgumentOutOfRangeException(nameof(index));
+            Guard.MustBeBetweenOrEqualTo(index, 0, 7, nameof(index));
+            fixed (Vector4* jointPtr = &Joints0) {
+                fixed (Vector4* weightPtr = &Weights0) {
+                    var joint = (int) ((float*) jointPtr)[index];
+                    var weight = ((float*) weightPtr)[index];
+                    return (joint, weight);
+                }
             }
         }
 
