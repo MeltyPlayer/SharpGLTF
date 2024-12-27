@@ -279,9 +279,6 @@ namespace SharpGLTF.Memory
                 // if (_min[i] > _max[i]) result.AddError(this, $"min[{i}] is larger than max[{i}]");
             }
 
-            var minimum = min.Select(item => (float)item).ToArray();
-            var maximum = max.Select(item => (float)item).ToArray();
-
             var xinfo = memory.Attribute;
             xinfo.Dimensions = DIMENSIONS.SCALAR;
             memory = new MemoryAccessor(memory.Data, xinfo);
@@ -303,27 +300,14 @@ namespace SharpGLTF.Memory
 
                         // if (!v._IsFinite()) result.AddError(this, $"Item[{j}][{i}] is not a finite number: {v}");
 
-                        var axisMin = minimum[j];
-                        var axisMax = maximum[j];
+                        var axisMin = min[j];
+                        var axisMax = max[j];
 
                         if (v < axisMin || v > axisMax) throw new ArgumentOutOfRangeException(nameof(memory), $"Value[{i}] is out of bounds. {axisMin} <= {v} <= {axisMax}");
 
                         // if (v < min || v > max) result.AddError(this, $"Item[{j}][{i}] is out of bounds. {min} <= {v} <= {max}");
                     }
                 });
-
-            var current = new float[dimensions];
-
-            for (int i = 0; i < array.Count; ++i)
-            {
-                array.CopyItemTo(i, current);
-
-                for (int j = 0; j < current.Length; ++j)
-                {
-                    var v = current[j];
-
-                }
-            }
         }
 
         #endregion
