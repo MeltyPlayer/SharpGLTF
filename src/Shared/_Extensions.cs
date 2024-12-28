@@ -53,12 +53,12 @@ namespace SharpGLTF
             #endif
         }
 
-        internal static bool _IsFinite(this Vector2 v)
+        internal static bool _IsFinite(this in Vector2 v)
         {
             return v.X._IsFinite() && v.Y._IsFinite();
         }
 
-        internal static bool _IsFinite(this Vector3 v)
+        internal static bool _IsFinite(this in Vector3 v)
         {
             return v.X._IsFinite() && v.Y._IsFinite() && v.Z._IsFinite();
         }
@@ -77,24 +77,24 @@ namespace SharpGLTF
             return true;
         }
 
-        internal static bool _IsFinite(this Quaternion v)
+        internal static bool _IsFinite(this in Quaternion v)
         {
             return v.X._IsFinite() && v.Y._IsFinite() && v.Z._IsFinite() && v.W._IsFinite();
         }
 
-        internal static Vector3 WithLength(this Vector3 v, float len)
+        internal static Vector3 WithLength(this in Vector3 v, float len)
         {
             return Vector3.Normalize(v) * len;
         }
 
-        internal static Boolean IsNormalized(this Vector3 normal)
+        internal static Boolean IsNormalized(this in Vector3 normal)
         {
             if (!normal._IsFinite()) return false;
 
             return Math.Abs(normal.Length() - 1) <= _UnitLengthThresholdVec3;
         }
 
-        internal static Boolean IsNormalized(this Quaternion rotation)
+        internal static Boolean IsNormalized(this in Quaternion rotation)
         {
             if (!rotation._IsFinite()) return false;
 
@@ -141,34 +141,34 @@ namespace SharpGLTF
             if (!vector._IsFinite()) throw new NotFiniteNumberException($"{msg} is invalid.");
         }*/
 
-        internal static void ValidateNormal(this Vector3 normal, string msg)
+        internal static void ValidateNormal(this in Vector3 normal, string msg)
         {
             if (!normal._IsFinite()) throw new NotFiniteNumberException($"{msg} is invalid.");
 
             if (!normal.IsNormalized()) throw new ArithmeticException($"{msg} is not unit length.");
         }
 
-        internal static void ValidateTangent(this Vector4 tangent, string msg)
+        internal static void ValidateTangent(this in Vector4 tangent, string msg)
         {
             if (tangent.W != 1 && tangent.W != -1) throw new ArithmeticException(msg);
 
             new Vector3(tangent.X, tangent.Y, tangent.Z).ValidateNormal(msg);
         }
 
-        internal static Vector3 SanitizeNormal(this Vector3 normal)
+        internal static Vector3 SanitizeNormal(this in Vector3 normal)
         {
             if (normal == Vector3.Zero) return Vector3.UnitX;
             return normal.IsNormalized() ? normal : Vector3.Normalize(normal);
         }
 
-        internal static bool IsValidTangent(this Vector4 tangent)
+        internal static bool IsValidTangent(this in Vector4 tangent)
         {
             if (tangent.W != 1 && tangent.W != -1) return false;
 
             return new Vector3(tangent.X, tangent.Y, tangent.Z).IsNormalized();
         }
 
-        internal static Vector4 SanitizeTangent(this Vector4 tangent)
+        internal static Vector4 SanitizeTangent(this in Vector4 tangent)
         {
             var n = new Vector3(tangent.X, tangent.Y, tangent.Z).SanitizeNormal();
             var s = float.IsNaN(tangent.W) ? 1 : tangent.W;

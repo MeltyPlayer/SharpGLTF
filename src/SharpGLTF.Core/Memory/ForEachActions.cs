@@ -10,8 +10,8 @@
         void Handle(int rowI, int subI, float value);
     }
 
-    public interface IForEachAction<in T> where T : struct
+    public interface IForEachAction<T> where T : struct
     {
-        void Handle(int rowI, T value);
+        void Handle(int rowI, in T value);
     }
 }

@@ -151,7 +151,7 @@ namespace SharpGLTF.Memory
                 this._handler = handler;
             }
 
-            public void Handle(int index, Vector3 element)
+            public void Handle(int index, in Vector3 element)
             {
                 this._handler.Handle(index, new Vector4(element, this._defaultW));
             }

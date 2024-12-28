@@ -317,7 +317,7 @@ namespace SharpGLTF.Validation
                 this._pname = pname;
             }
 
-            public void Handle(int index, System.Numerics.Vector3 position)
+            public void Handle(int index, in System.Numerics.Vector3 position)
             {
                 if (!position._IsFinite()) _DataThrow(this._current, (this._pname, index), "Invalid Position");
             }
@@ -341,7 +341,7 @@ namespace SharpGLTF.Validation
                 this._pname = pname;
             }
 
-            public void Handle(int index, System.Numerics.Vector3 normal)
+            public void Handle(int index, in System.Numerics.Vector3 normal)
             {
                 if (!normal.IsNormalized()) _DataThrow(_current, (_pname, index), "Invalid Normal");
             }
@@ -365,7 +365,7 @@ namespace SharpGLTF.Validation
                 this._pname = pname;
             }
 
-            public void Handle(int index, System.Numerics.Vector4 tangent)
+            public void Handle(int index, in System.Numerics.Vector4 tangent)
             {
                 if (!tangent.IsValidTangent()) _DataThrow(_current, (_pname, index), "Invalid Tangent");
             }
@@ -389,7 +389,7 @@ namespace SharpGLTF.Validation
                 this._pname = pname;
             }
 
-            public void Handle(int index, System.Numerics.Quaternion rotation)
+            public void Handle(int index, in System.Numerics.Quaternion rotation)
             {
                 if (!rotation.IsNormalized()) _DataThrow(_current, (_pname, index), "Invalid Rotation");
             }
