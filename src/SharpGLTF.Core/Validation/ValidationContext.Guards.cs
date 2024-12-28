@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Runtime.CompilerServices;
 using SharpGLTF.Memory;
 
 namespace SharpGLTF.Validation
@@ -235,7 +235,12 @@ namespace SharpGLTF.Validation
         #region data
 
         [System.Diagnostics.DebuggerStepThrough]
-        private void _DataThrow(PARAMNAME pname, string msg) { throw new DataException(_Current, $"{pname}: {msg}"); }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void _DataThrow(PARAMNAME pname, string msg) { _DataThrow(_Current, pname, msg); }
+
+        [System.Diagnostics.DebuggerStepThrough]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void _DataThrow(IO.JsonSerializable current, PARAMNAME pname, string msg) { throw new DataException(current, $"{pname}: {msg}"); }
 
         public OUTTYPE IsInRange<T>(PARAMNAME pname, T value, T minInclusive, T maxInclusive)
             where T : IComparable<T>
@@ -297,63 +302,128 @@ namespace SharpGLTF.Validation
         public OUTTYPE ArePositions(PARAMNAME pname, IAccessorList<System.Numerics.Vector3> positions)
         {
             Guard.NotNull(positions, nameof(positions));
-
-            var me = this;
-            positions.ForEach((i, position) => me.IsPosition((pname, i), position));
-
+            positions.ForEach(new ValidatePositionForEachAction(_Current, pname));
             return this;
+        }
+
+        private readonly struct ValidatePositionForEachAction : IForEachAction<System.Numerics.Vector3>
+        {
+            private readonly IO.JsonSerializable _current;
+            private readonly PARAMNAME _pname;
+
+            public ValidatePositionForEachAction(IO.JsonSerializable current, PARAMNAME pname)
+            {
+                this._current = current;
+                this._pname = pname;
+            }
+
+            public void Handle(int index, System.Numerics.Vector3 position)
+            {
+                if (!position._IsFinite()) _DataThrow(this._current, (this._pname, index), "Invalid Position");
+            }
         }
 
         public OUTTYPE AreNormals(PARAMNAME pname, IAccessorList<System.Numerics.Vector3> normals)
         {
             Guard.NotNull(normals, nameof(normals));
-
-            var me = this;
-            normals.ForEach((i, normal) => me.IsNormal((pname, i), normal));
-
+            normals.ForEach(new ValidateNormalForEachAction(_Current, pname));
             return this;
+        }
+
+        private readonly struct ValidateNormalForEachAction : IForEachAction<System.Numerics.Vector3>
+        {
+            private readonly IO.JsonSerializable _current;
+            private readonly PARAMNAME _pname;
+
+            public ValidateNormalForEachAction(IO.JsonSerializable current, PARAMNAME pname)
+            {
+                this._current = current;
+                this._pname = pname;
+            }
+
+            public void Handle(int index, System.Numerics.Vector3 normal)
+            {
+                if (!normal.IsNormalized()) _DataThrow(_current, (_pname, index), "Invalid Normal");
+            }
         }
 
         public OUTTYPE AreTangents(PARAMNAME pname, IAccessorList<System.Numerics.Vector4> tangents)
         {
             Guard.NotNull(tangents, nameof(tangents));
-
-            var me = this;
-            tangents.ForEach((i, tangent) => {
-                if (!tangent.IsValidTangent()) me._DataThrow((pname, i), "Invalid Tangent");
-            });
-
+            tangents.ForEach(new ValidateTangentForEachAction(_Current, pname));
             return this;
+        }
+
+        private readonly struct ValidateTangentForEachAction : IForEachAction<System.Numerics.Vector4>
+        {
+            private readonly IO.JsonSerializable _current;
+            private readonly PARAMNAME _pname;
+
+            public ValidateTangentForEachAction(IO.JsonSerializable current, PARAMNAME pname)
+            {
+                this._current = current;
+                this._pname = pname;
+            }
+
+            public void Handle(int index, System.Numerics.Vector4 tangent)
+            {
+                if (!tangent.IsValidTangent()) _DataThrow(_current, (_pname, index), "Invalid Tangent");
+            }
         }
 
         public OUTTYPE AreRotations(PARAMNAME pname, IAccessorList<System.Numerics.Quaternion> rotations)
         {
             Guard.NotNull(rotations, nameof(rotations));
-
-            var me = this;
-            rotations.ForEach((i, rotation) => {
-                if (!rotation.IsNormalized()) me._DataThrow((pname, i), "Invalid Rotation");
-            });
-
+            rotations.ForEach(new ValidateRotationForEachAction(_Current, pname));
             return this;
+        }
+
+        private readonly struct ValidateRotationForEachAction : IForEachAction<System.Numerics.Quaternion>
+        {
+            private readonly IO.JsonSerializable _current;
+            private readonly PARAMNAME _pname;
+
+            public ValidateRotationForEachAction(IO.JsonSerializable current, PARAMNAME pname)
+            {
+                this._current = current;
+                this._pname = pname;
+            }
+
+            public void Handle(int index, System.Numerics.Quaternion rotation)
+            {
+                if (!rotation.IsNormalized()) _DataThrow(_current, (_pname, index), "Invalid Rotation");
+            }
         }
 
         public OUTTYPE AreJoints(PARAMNAME pname, IAccessorList<System.Numerics.Vector4> joints, int skinsMaxJointCount)
         {
             Guard.NotNull(joints, nameof(joints));
-
-            var me = this;
-            joints.ForEach((i, jjjj) => {
-
-                if (!jjjj._IsFinite()) me._DataThrow((pname, i), "Is not finite");
-
-                if (jjjj.X < 0 || jjjj.X >= skinsMaxJointCount) me._DataThrow((pname, i), "Is out of bounds");
-                if (jjjj.Y < 0 || jjjj.Y >= skinsMaxJointCount) me._DataThrow((pname, i), "Is out of bounds");
-                if (jjjj.Z < 0 || jjjj.Z >= skinsMaxJointCount) me._DataThrow((pname, i), "Is out of bounds");
-                if (jjjj.W < 0 || jjjj.W >= skinsMaxJointCount) me._DataThrow((pname, i), "Is out of bounds");
-            });
-
+            joints.ForEach(new ValidateJointForEachAction(_Current, pname, skinsMaxJointCount));
             return this;
+        }
+
+        private readonly struct ValidateJointForEachAction : IForEachAction<System.Numerics.Vector4>
+        {
+            private readonly IO.JsonSerializable _current;
+            private readonly PARAMNAME _pname;
+            private readonly int _skinsMaxJointCount;
+
+            public ValidateJointForEachAction(IO.JsonSerializable current, PARAMNAME pname, int skinsMaxJointCount)
+            {
+                this._current = current;
+                this._pname = pname;
+                this._skinsMaxJointCount = skinsMaxJointCount;
+            }
+
+            public void Handle(int index, System.Numerics.Vector4 jjjj)
+            {
+                if (!jjjj._IsFinite()) _DataThrow(_current, (_pname, index), "Is not finite");
+
+                if (jjjj.X < 0 || jjjj.X >= _skinsMaxJointCount) _DataThrow(_current, (_pname, index), "Is out of bounds");
+                if (jjjj.Y < 0 || jjjj.Y >= _skinsMaxJointCount) _DataThrow(_current, (_pname, index), "Is out of bounds");
+                if (jjjj.Z < 0 || jjjj.Z >= _skinsMaxJointCount) _DataThrow(_current, (_pname, index), "Is out of bounds");
+                if (jjjj.W < 0 || jjjj.W >= _skinsMaxJointCount) _DataThrow(_current, (_pname, index), "Is out of bounds");
+            }
         }
 
         public OUTTYPE That(Action action)

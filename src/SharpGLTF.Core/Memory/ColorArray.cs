@@ -123,14 +123,32 @@ namespace SharpGLTF.Memory
             values._CopyTo(this, dstStart);
         }
 
-        public void ForEach(IAccessorList<Vector4>.ForEachHandler handler)
+        public void ForEach<TAction>(TAction handler = default) where TAction : struct, IForEachAction<Vector4>
         {
             if (_Dimensions >= 4)
             {
-                _Accessor._ForEach(4, (i, span) => handler(i, MemoryMarshal.Cast<float, Vector4>(span)[0]));
-            } else {
-                var defaultW = this._DefaultW;
-                _Accessor._ForEach(3, (i, span) => handler(i, new Vector4(MemoryMarshal.Cast<float, Vector3>(span)[0], defaultW)));
+                _Accessor._ForEach<Vector4, TAction>(handler);
+            }
+            else
+            {
+                _Accessor._ForEach<Vector3, DefaultWForEachAction<TAction>>(new DefaultWForEachAction<TAction>(this._DefaultW, handler));
+            }
+        }
+
+        private readonly struct DefaultWForEachAction<TAction> : IForEachAction<Vector3> where TAction : struct, IForEachAction<Vector4>
+        {
+            private readonly float _defaultW;
+            private readonly TAction _handler;
+
+            public DefaultWForEachAction(float defaultW, TAction handler)
+            {
+                this._defaultW = defaultW;
+                this._handler = handler;
+            }
+
+            public void Handle(int index, Vector3 element)
+            {
+                this._handler.Handle(index, new Vector4(element, this._defaultW));
             }
         }
 

@@ -2,13 +2,11 @@
 
 namespace SharpGLTF.Memory
 {
-    public interface IAccessorList<T> : IList<T>, IReadOnlyList<T> where T : unmanaged
+    public interface IAccessorList<T> : IList<T>, IReadOnlyList<T> where T : struct
     {
         new T this[int index] { get; set; }
         new int Count { get; }
 
-        public delegate void ForEachHandler(int index, T element);
-
-        void ForEach(ForEachHandler handler);
+        void ForEach<TAction>(TAction handler = default) where TAction : struct, IForEachAction<T>;
     }
 }

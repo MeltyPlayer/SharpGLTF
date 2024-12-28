@@ -171,16 +171,29 @@ namespace SharpGLTF.Schema2
             }
 
             var array = new MultiArray(this.SourceBufferView.Content, this.ByteOffset, this.Count, this.SourceBufferView.ByteStride, dimensions, this.Encoding, false);
-            array._ForEach(
-                dimensions, 
-                (_, span) => {
-                    for (int i = 0; i < dimensions; ++i)
-                    {
-                        var value = span[i];
-                        this._min[i] = Math.Min(this._min[i], value);
-                        this._max[i] = Math.Max(this._max[i], value);
-                    }
-                });
+            array.ForEach(dimensions, new MinMaxForEachAction(this._min, this._max));
+        }
+
+        private readonly struct MinMaxForEachAction : IForEachAction
+        {
+            private readonly IList<double> _min;
+            private readonly IList<double> _max;
+
+            public MinMaxForEachAction(IList<double> min, IList<double> max)
+            {
+                this._min = min;
+                this._max = max;
+            }
+
+            public void Handle(int index, ReadOnlySpan<float> span)
+            {
+                for (int i = 0; i < span.Length; ++i)
+                {
+                    var value = span[i];
+                    this._min[i] = Math.Min(this._min[i], value);
+                    this._max[i] = Math.Max(this._max[i], value);
+                }
+            }
         }
 
         #endregion

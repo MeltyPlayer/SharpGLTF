@@ -79,11 +79,11 @@ namespace SharpGLTF.Memory
 
         bool ICollection<T>.Remove(T item) { throw new NotSupportedException(); }
 
-        void IAccessorList<T>.ForEach(IAccessorList<T>.ForEachHandler handler)
+        public void ForEach<TAction>(TAction handler = default) where TAction : struct, IForEachAction<T>
         {
             for (var i = 0; i < this.Count; ++i)
             {
-                handler(i, this[i]);
+                handler.Handle(i, this[i]);
             }
         }
 

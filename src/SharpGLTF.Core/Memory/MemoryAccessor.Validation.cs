@@ -261,20 +261,20 @@ namespace SharpGLTF.Memory
 
         #region bounds validation
 
-        public static void VerifyAccessorBounds(MemoryAccessor memory, IReadOnlyList<double> min, IReadOnlyList<double> max)
+        public static void VerifyAccessorBounds(MemoryAccessor memory, IReadOnlyList<double> expectedMin, IReadOnlyList<double> expectedMax)
         {
             Guard.NotNull(memory, nameof(memory));
-            Guard.NotNull(min, nameof(min));
-            Guard.NotNull(max, nameof(max));
+            Guard.NotNull(expectedMin, nameof(expectedMin));
+            Guard.NotNull(expectedMax, nameof(expectedMax));
 
-            if (min.Count == 0 && max.Count == 0) return;
+            if (expectedMin.Count == 0 && expectedMax.Count == 0) return;
 
             var dimensions = memory.Attribute.Dimensions.DimCount();
 
-            if (min.Count != dimensions) throw new ArgumentException($"min size mismatch; expected {dimensions} but found {min.Count}", nameof(min));
-            if (max.Count != dimensions) throw new ArgumentException($"max size mismatch; expected {dimensions} but found {max.Count}", nameof(max));
+            if (expectedMin.Count != dimensions) throw new ArgumentException($"min size mismatch; expected {dimensions} but found {expectedMin.Count}", nameof(expectedMin));
+            if (expectedMax.Count != dimensions) throw new ArgumentException($"max size mismatch; expected {dimensions} but found {expectedMax.Count}", nameof(expectedMax));
 
-            for (int i = 0; i < min.Count; ++i)
+            for (int i = 0; i < expectedMin.Count; ++i)
             {
                 // if (_min[i] > _max[i]) result.AddError(this, $"min[{i}] is larger than max[{i}]");
             }
@@ -290,24 +290,36 @@ namespace SharpGLTF.Memory
                 memory.Attribute.ByteStride,
                 dimensions, memory.Attribute.Encoding,
                 false); // bounds checks are done without normalization; https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#_accessor_max
+            array.ForEach(dimensions, new ValidateMinMaxForEachAction(expectedMin, expectedMax));
+        }
 
-            array._ForEach(
-                dimensions, 
-                (i, span) => {
-                    for (int j = 0; j < dimensions; ++j)
-                    {
-                        var v = span[j];
+        private readonly struct ValidateMinMaxForEachAction : IForEachAction
+        {
+            private readonly IReadOnlyList<double> _expectedMin;
+            private readonly IReadOnlyList<double> _expectedMax;
 
-                        // if (!v._IsFinite()) result.AddError(this, $"Item[{j}][{i}] is not a finite number: {v}");
+            public ValidateMinMaxForEachAction(IReadOnlyList<double> expectedMin, IReadOnlyList<double> expectedMax)
+            {
+                this._expectedMin = expectedMin;
+                this._expectedMax = expectedMax;
+            }
 
-                        var axisMin = min[j];
-                        var axisMax = max[j];
+            public void Handle(int index, ReadOnlySpan<float> span)
+            {
+                for (int j = 0; j < span.Length; ++j)
+                {
+                    var v = span[j];
 
-                        if (v < axisMin || v > axisMax) throw new ArgumentOutOfRangeException(nameof(memory), $"Value[{i}] is out of bounds. {axisMin} <= {v} <= {axisMax}");
+                    // if (!v._IsFinite()) result.AddError(this, $"Item[{j}][{i}] is not a finite number: {v}");
 
-                        // if (v < min || v > max) result.AddError(this, $"Item[{j}][{i}] is out of bounds. {min} <= {v} <= {max}");
-                    }
-                });
+                    var axisMin = _expectedMin[j];
+                    var axisMax = _expectedMax[j];
+
+                    if (v < axisMin || v > axisMax) throw new ArgumentOutOfRangeException("memory", $"Value[{index}] is out of bounds. {axisMin} <= {v} <= {axisMax}");
+
+                    // if (v < min || v > max) result.AddError(this, $"Item[{j}][{i}] is out of bounds. {min} <= {v} <= {max}");
+                }
+            }
         }
 
         #endregion

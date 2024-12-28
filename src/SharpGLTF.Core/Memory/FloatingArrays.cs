@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using BYTES = System.Memory<byte>;
 
 using ENCODING = SharpGLTF.Schema2.EncodingType;
+using static SharpGLTF.Memory.FloatingAccessor;
 
 namespace SharpGLTF.Memory
 {
@@ -525,9 +526,7 @@ namespace SharpGLTF.Memory
             }
         }
 
-        internal delegate void ForEachHandler(int index, ReadOnlySpan<float> element);
-
-        internal void _ForEach(int subCount, ForEachHandler handler)
+        internal void _ForEach<TAction>(int subCount, TAction handler = default) where TAction : struct, IForEachAction
         {
             var rowCount = this._ItemCount;
             Span<float> subElements = stackalloc float[subCount];
@@ -546,7 +545,7 @@ namespace SharpGLTF.Memory
                             {
                                 subElements[subI] = Math.Max(span[baseSrcI + subI] / 127.0f, -1);
                             }
-                            handler(rowI, subElements);
+                            handler.Handle(rowI, subElements);
                         }
                         break;
                     }
@@ -560,7 +559,7 @@ namespace SharpGLTF.Memory
                                 {
                                     subElements[subI] = span[baseSrcI + subI] / 255.0f;
                                 }
-                                handler(rowI, subElements);
+                                handler.Handle(rowI, subElements);
                             }
                             break;
                         }
@@ -574,7 +573,7 @@ namespace SharpGLTF.Memory
                                 {
                                     subElements[subI] = Math.Max(span[baseSrcI + subI] / 32767.0f, -1);
                                 }
-                                handler(rowI, subElements);
+                                handler.Handle(rowI, subElements);
                             }
                             break;
                         }
@@ -588,7 +587,7 @@ namespace SharpGLTF.Memory
                                 {
                                     subElements[subI] = span[baseSrcI + subI] / 65535.0f;
                                 }
-                                handler(rowI, subElements);
+                                handler.Handle(rowI, subElements);
                             }
                             break;
                         }
@@ -609,7 +608,7 @@ namespace SharpGLTF.Memory
                             {
                                 subElements[subI] = span[baseSrcI + subI];
                             }
-                            handler(rowI, subElements);
+                            handler.Handle(rowI, subElements);
                         }
                         break;
                     }
@@ -623,7 +622,7 @@ namespace SharpGLTF.Memory
                             {
                                 subElements[subI] = span[baseSrcI + subI];
                             }
-                            handler(rowI, subElements);
+                            handler.Handle(rowI, subElements);
                         }
                         break;
                     }
@@ -637,7 +636,7 @@ namespace SharpGLTF.Memory
                             {
                                 subElements[subI] = span[baseSrcI + subI];
                             }
-                            handler(rowI, subElements);
+                            handler.Handle(rowI, subElements);
                         }
                         break;
                     }
@@ -651,7 +650,7 @@ namespace SharpGLTF.Memory
                             {
                                 subElements[subI] = span[baseSrcI + subI];
                             }
-                            handler(rowI, subElements);
+                            handler.Handle(rowI, subElements);
                         }
                         break;
                     }
@@ -665,7 +664,7 @@ namespace SharpGLTF.Memory
                             {
                                 subElements[subI] = span[baseSrcI + subI];
                             }
-                            handler(rowI, subElements);
+                            handler.Handle(rowI, subElements);
                         }
                         break;
                     }
@@ -679,7 +678,176 @@ namespace SharpGLTF.Memory
                             {
                                 subElements[subI] = span[baseSrcI + subI];
                             }
-                            handler(rowI, subElements);
+                            handler.Handle(rowI, subElements);
+                        }
+                        break;
+                    }
+                default: throw new ArgumentOutOfRangeException();
+            }
+        }
+        
+        internal unsafe void _ForEach<T, TAction>(TAction handler = default) 
+            where T : unmanaged
+            where TAction : struct, IForEachAction<T>
+        {
+            var rowCount = this._ItemCount;
+
+            var tSize = sizeof(T);
+            Guard.IsTrue(tSize % 4 == 0, nameof(tSize), "Size of T must be divisible by 4");
+
+            var subCount = sizeof(T) >> 2;
+
+            Span<T> elementSpan = stackalloc T[1];
+            Span<float> subSpan = MemoryMarshal.Cast<T, float>(elementSpan);
+
+            if (_Normalized)
+            {
+                switch (_Encoding)
+                {
+                    case ENCODING.BYTE:
+                    {
+                        var span = MemoryMarshal.Cast<byte, sbyte>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseSrcI = rowI * _ByteStride;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                subSpan[subI] = Math.Max(span[baseSrcI + subI] / 127.0f, -1);
+                            }
+                            handler.Handle(rowI, elementSpan[0]);
+                        }
+                        break;
+                    }
+                    case ENCODING.UNSIGNED_BYTE:
+                        {
+                            var span = this._Data.Span;
+                            for (var rowI = 0; rowI < rowCount; ++rowI)
+                            {
+                                var baseSrcI = rowI * _ByteStride;
+                                for (var subI = 0; subI < subCount; ++subI)
+                                {
+                                    subSpan[subI] = span[baseSrcI + subI] / 255.0f;
+                                }
+                                handler.Handle(rowI, elementSpan[0]);
+                            }
+                            break;
+                        }
+                    case ENCODING.SHORT:
+                        {
+                            var span = MemoryMarshal.Cast<byte, short>(this._Data.Span);
+                            for (var rowI = 0; rowI < rowCount; ++rowI)
+                            {
+                                var baseSrcI = (rowI * _ByteStride) >> 1;
+                                for (var subI = 0; subI < subCount; ++subI)
+                                {
+                                    subSpan[subI] = Math.Max(span[baseSrcI + subI] / 32767.0f, -1);
+                                }
+                                handler.Handle(rowI, elementSpan[0]);
+                            }
+                            break;
+                        }
+                    case ENCODING.UNSIGNED_SHORT:
+                        {
+                            var span = MemoryMarshal.Cast<byte, ushort>(this._Data.Span);
+                            for (var rowI = 0; rowI < rowCount; ++rowI)
+                            {
+                                var baseSrcI = (rowI * _ByteStride) >> 1;
+                                for (var subI = 0; subI < subCount; ++subI)
+                                {
+                                    subSpan[subI] = span[baseSrcI + subI] / 65535.0f;
+                                }
+                                handler.Handle(rowI, elementSpan[0]);
+                            }
+                            break;
+                        }
+                    default: throw new ArgumentOutOfRangeException();
+                }
+                return;
+            }
+
+            switch (_Encoding)
+            {
+                case ENCODING.BYTE:
+                    {
+                        var span = MemoryMarshal.Cast<byte, sbyte>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseSrcI = rowI * _ByteStride;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                subSpan[subI] = span[baseSrcI + subI];
+                            }
+                            handler.Handle(rowI, elementSpan[0]);
+                        }
+                        break;
+                    }
+                case ENCODING.UNSIGNED_BYTE:
+                    {
+                        var span = this._Data.Span;
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseSrcI = rowI * _ByteStride;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                subSpan[subI] = span[baseSrcI + subI];
+                            }
+                            handler.Handle(rowI, elementSpan[0]);
+                        }
+                        break;
+                    }
+                case ENCODING.SHORT:
+                    {
+                        var span = MemoryMarshal.Cast<byte, short>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseSrcI = (rowI * _ByteStride) >> 1;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                subSpan[subI] = span[baseSrcI + subI];
+                            }
+                            handler.Handle(rowI, elementSpan[0]);
+                        }
+                        break;
+                    }
+                case ENCODING.UNSIGNED_SHORT:
+                    {
+                        var span = MemoryMarshal.Cast<byte, ushort>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseSrcI = (rowI * _ByteStride) >> 1;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                subSpan[subI] = span[baseSrcI + subI];
+                            }
+                            handler.Handle(rowI, elementSpan[0]);
+                        }
+                        break;
+                    }
+                case ENCODING.UNSIGNED_INT:
+                    {
+                        var span = MemoryMarshal.Cast<byte, uint>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseSrcI = (rowI * _ByteStride) >> 2;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                subSpan[subI] = span[baseSrcI + subI];
+                            }
+                            handler.Handle(rowI, elementSpan[0]);
+                        }
+                        break;
+                    }
+                case ENCODING.FLOAT:
+                    {
+                        var span = MemoryMarshal.Cast<byte, float>(this._Data.Span);
+                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        {
+                            var baseSrcI = (rowI * _ByteStride) >> 2;
+                            for (var subI = 0; subI < subCount; ++subI)
+                            {
+                                subSpan[subI] = span[baseSrcI + subI];
+                            }
+                            handler.Handle(rowI, elementSpan[0]);
                         }
                         break;
                     }
@@ -778,9 +946,9 @@ namespace SharpGLTF.Memory
             _Accessor.Fill(values, 1, dstStart);
         }
 
-        public void ForEach(IAccessorList<Single>.ForEachHandler handler)
+        public void ForEach<TAction>(TAction handler = default) where TAction : struct, IForEachAction<Single>
         {
-            _Accessor._ForEach(1, (i, span) => handler(i, span[0]));
+            _Accessor._ForEach<float, TAction>(handler);
         }
 
         void IList<Single>.Insert(int index, Single item) { throw new NotSupportedException(); }
@@ -892,9 +1060,9 @@ namespace SharpGLTF.Memory
             _Accessor.Fill(MemoryMarshal.Cast<Vector2, float>(values), 2, dstStart);
         }
 
-        public void ForEach(IAccessorList<Vector2>.ForEachHandler handler)
+        public void ForEach<TAction>(TAction handler = default) where TAction : struct, IForEachAction<Vector2>
         {
-            _Accessor._ForEach(2, (i, span) => handler(i, MemoryMarshal.Cast<float, Vector2>(span)[0]));
+            _Accessor._ForEach<Vector2, TAction>(handler);
         }
 
         void IList<Vector2>.Insert(int index, Vector2 item) { throw new NotSupportedException(); }
@@ -1007,9 +1175,9 @@ namespace SharpGLTF.Memory
             _Accessor.Fill(MemoryMarshal.Cast<Vector3, float>(values), 3, dstStart);
         }
 
-        public void ForEach(IAccessorList<Vector3>.ForEachHandler handler)
+        public void ForEach<TAction>(TAction handler = default) where TAction : struct, IForEachAction<Vector3>
         {
-            _Accessor._ForEach(3, (i, span) => handler(i, MemoryMarshal.Cast<float, Vector3>(span)[0]));
+            _Accessor._ForEach<Vector3, TAction>(handler);
         }
 
         void IList<Vector3>.Insert(int index, Vector3 item) { throw new NotSupportedException(); }
@@ -1123,9 +1291,9 @@ namespace SharpGLTF.Memory
             _Accessor.Fill(MemoryMarshal.Cast<Vector4, float>(values), 4, dstStart);
         }
 
-        public void ForEach(IAccessorList<Vector4>.ForEachHandler handler)
+        public void ForEach<TAction>(TAction handler = default) where TAction : struct, IForEachAction<Vector4>
         {
-            _Accessor._ForEach(4, (i, span) => handler(i, MemoryMarshal.Cast<float, Vector4>(span)[0]));
+            _Accessor._ForEach<Vector4, TAction>(handler);
         }
 
         void IList<Vector4>.Insert(int index, Vector4 item) { throw new NotSupportedException(); }
@@ -1787,7 +1955,7 @@ namespace SharpGLTF.Memory
             for (int i = 0; i < count; ++i) dstItem[i] = _Accessor[index, i];
         }
 
-        internal void _ForEach(int subCount, FloatingAccessor.ForEachHandler handler)
+        public void ForEach<TAction>(int subCount, TAction handler = default) where TAction : struct, IForEachAction
         {
             _Accessor._ForEach(subCount, handler);
         }
