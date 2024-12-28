@@ -398,11 +398,11 @@ namespace SharpGLTF.Validation
         public OUTTYPE AreJoints(PARAMNAME pname, IAccessorList<System.Numerics.Vector4> joints, int skinsMaxJointCount)
         {
             Guard.NotNull(joints, nameof(joints));
-            joints.ForEach(new ValidateJointForEachAction(_Current, pname, skinsMaxJointCount));
+            joints.ForEachSub(new ValidateJointForEachAction(_Current, pname, skinsMaxJointCount));
             return this;
         }
 
-        private readonly struct ValidateJointForEachAction : IForEachAction<System.Numerics.Vector4>
+        private readonly struct ValidateJointForEachAction : IForEachSubAction
         {
             private readonly IO.JsonSerializable _current;
             private readonly PARAMNAME _pname;
@@ -415,14 +415,10 @@ namespace SharpGLTF.Validation
                 this._skinsMaxJointCount = skinsMaxJointCount;
             }
 
-            public void Handle(int index, System.Numerics.Vector4 jjjj)
+            public void Handle(int rowI, int subI, float joint)
             {
-                if (!jjjj._IsFinite()) _DataThrow(_current, (_pname, index), "Is not finite");
-
-                if (jjjj.X < 0 || jjjj.X >= _skinsMaxJointCount) _DataThrow(_current, (_pname, index), "Is out of bounds");
-                if (jjjj.Y < 0 || jjjj.Y >= _skinsMaxJointCount) _DataThrow(_current, (_pname, index), "Is out of bounds");
-                if (jjjj.Z < 0 || jjjj.Z >= _skinsMaxJointCount) _DataThrow(_current, (_pname, index), "Is out of bounds");
-                if (jjjj.W < 0 || jjjj.W >= _skinsMaxJointCount) _DataThrow(_current, (_pname, index), "Is out of bounds");
+                if (!joint._IsFinite()) _DataThrow(_current, (_pname, rowI), "Is not finite");
+                if (joint < 0 || joint >= _skinsMaxJointCount) _DataThrow(_current, (_pname, rowI), "Is out of bounds");
             }
         }
 

@@ -2,6 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
+using System.Runtime.InteropServices;
+
 
 namespace SharpGLTF.Memory
 {
@@ -79,11 +82,24 @@ namespace SharpGLTF.Memory
 
         bool ICollection<T>.Remove(T item) { throw new NotSupportedException(); }
 
+        public void ForEachSub<TAction>(TAction handler = default) where TAction : struct, IForEachSubAction {
+            Span<T> elementSpan = stackalloc T[1];
+            var subSpan = MemoryMarshal.Cast<T, float>(elementSpan);
+            for (var rowI = 0; rowI < this.Count; ++rowI)
+            {
+                elementSpan[0] = this[rowI];
+                for (var subI = 0; subI < this.Count; ++subI)
+                {
+                    handler.Handle(subI, subI, subSpan[subI]);
+                }
+            }
+        }
+
         public void ForEach<TAction>(TAction handler = default) where TAction : struct, IForEachAction<T>
         {
-            for (var i = 0; i < this.Count; ++i)
+            for (var rowI = 0; rowI < this.Count; ++rowI)
             {
-                handler.Handle(i, this[i]);
+                handler.Handle(rowI, this[rowI]);
             }
         }
 

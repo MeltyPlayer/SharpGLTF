@@ -123,6 +123,11 @@ namespace SharpGLTF.Memory
             values._CopyTo(this, dstStart);
         }
 
+        public void ForEachSub<TAction>(TAction handler = default) where TAction : struct, IForEachSubAction
+        {
+            _Accessor._ForEachSub(_Dimensions >= 4 ? 4 : 3, handler);
+        }
+
         public void ForEach<TAction>(TAction handler = default) where TAction : struct, IForEachAction<Vector4>
         {
             if (_Dimensions >= 4)

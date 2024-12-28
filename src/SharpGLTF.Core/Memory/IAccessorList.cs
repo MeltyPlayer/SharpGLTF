@@ -7,6 +7,7 @@ namespace SharpGLTF.Memory
         new T this[int index] { get; set; }
         new int Count { get; }
 
+        void ForEachSub<TAction>(TAction handler = default) where TAction : struct, IForEachSubAction;
         void ForEach<TAction>(TAction handler = default) where TAction : struct, IForEachAction<T>;
     }
 }

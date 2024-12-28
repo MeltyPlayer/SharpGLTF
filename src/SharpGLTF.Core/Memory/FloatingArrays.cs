@@ -613,13 +613,23 @@ namespace SharpGLTF.Memory
                 case ENCODING.UNSIGNED_BYTE:
                     {
                         var scan0 = (byte*) pin.Pointer;
-                        for (var rowI = 0; rowI < rowCount; ++rowI)
+                        switch (parallelType)
                         {
-                            var basePtr = scan0 + rowI * _ByteStride;
-                            for (var subI = 0; subI < subCount; ++subI)
-                            {
-                                handler.Handle(rowI, subI, *(basePtr + subI));
-                            }
+                            case ParallelType.ROW_AND_SUB:
+                                {
+                                    ParallelHelper.For2D(0, rowCount, 0, subCount, new UnnormalizedByteRowAndSubForEachAction<TAction>(scan0, _ByteStride, handler));
+                                    break;
+                                }
+                            default:
+                                {
+                                    for (var rowI = 0; rowI < rowCount; ++rowI) {
+                                        var basePtr = scan0 + rowI * _ByteStride;
+                                        for (var subI = 0; subI < subCount; ++subI) {
+                                            handler.Handle(rowI, subI, *(basePtr + subI));
+                                        }
+                                    }
+                                    break;
+                                }
                         }
                         break;
                     }
@@ -681,6 +691,23 @@ namespace SharpGLTF.Memory
                         break;
                     }
                 default: throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private readonly unsafe struct UnnormalizedByteRowAndSubForEachAction<TAction> : IAction2D where TAction : struct, IForEachSubAction {
+            private readonly byte* _scan0;
+            private readonly int _byteStride;
+            private readonly TAction _handler;
+
+            public UnnormalizedByteRowAndSubForEachAction(byte* scan0, int byteStride, TAction handler) {
+                this._scan0 = scan0;
+                this._byteStride = byteStride;
+                this._handler = handler;
+            }
+
+            public void Invoke(int rowI, int subI) {
+                var basePtr = _scan0 + rowI * _byteStride;
+                _handler.Handle(rowI, subI, basePtr[subI]);
             }
         }
 
@@ -877,40 +904,29 @@ namespace SharpGLTF.Memory
                     }
                 case ENCODING.FLOAT:
                     {
-                        ParallelHelper.For(0, rowCount, new UnnormalizedFloatTForEachAction<T, TAction>((byte*) pin.Pointer, _ByteStride, handler));
+                        ParallelHelper.For(0, rowCount, new TForEachAction<T, TAction>((byte*) pin.Pointer, _ByteStride, handler));
                         break;
                     }
                 default: throw new ArgumentOutOfRangeException();
             }
         }
 
-        private readonly unsafe struct UnnormalizedFloatTForEachAction<T, TAction> : IAction
+        private readonly unsafe struct TForEachAction<T, TAction> : IAction
                 where T : unmanaged
                 where TAction : struct, IForEachAction<T>
         {
             private readonly byte* _scan0;
             private readonly int _byteStride;
             private readonly TAction _handler;
-            private readonly int _subCount;
 
-            public UnnormalizedFloatTForEachAction(byte* scan0, int byteStride, TAction handler) {
+            public TForEachAction(byte* scan0, int byteStride, TAction handler) {
                 this._scan0 = scan0;
                 this._byteStride = byteStride;
                 this._handler = handler;
-                this._subCount = sizeof(T) >> 2;
             }
 
             public void Invoke(int rowI) {
-                Span<T> elementSpan = stackalloc T[1];
-                Span<float> subSpan = MemoryMarshal.Cast<T, float>(elementSpan);
-
-                var basePtr = (float*) (_scan0 + rowI * _byteStride);
-                for (var subI = 0; subI < _subCount; ++subI)
-                {
-                    subSpan[subI] = *(basePtr + subI);
-                }
-
-                _handler.Handle(rowI, elementSpan[0]);
+                _handler.Handle(rowI, *(T*) (_scan0 + rowI * _byteStride));
             }
         }
 
@@ -1003,6 +1019,11 @@ namespace SharpGLTF.Memory
         public void FillSpan(ReadOnlySpan<Single> values, int dstStart = 0)
         {
             _Accessor.Fill(values, 1, dstStart);
+        }
+
+        public void ForEachSub<TAction>(TAction handler = default) where TAction : struct, IForEachSubAction
+        {
+            _Accessor._ForEachSub(1, handler);
         }
 
         public void ForEach<TAction>(TAction handler = default) where TAction : struct, IForEachAction<Single>
@@ -1119,6 +1140,11 @@ namespace SharpGLTF.Memory
             _Accessor.Fill(MemoryMarshal.Cast<Vector2, float>(values), 2, dstStart);
         }
 
+        public void ForEachSub<TAction>(TAction handler = default) where TAction : struct, IForEachSubAction
+        {
+            _Accessor._ForEachSub(2, handler);
+        }
+
         public void ForEach<TAction>(TAction handler = default) where TAction : struct, IForEachAction<Vector2>
         {
             _Accessor._ForEach<Vector2, TAction>(handler);
@@ -1232,6 +1258,11 @@ namespace SharpGLTF.Memory
         public void FillSpan(ReadOnlySpan<Vector3> values, int dstStart = 0)
         {
             _Accessor.Fill(MemoryMarshal.Cast<Vector3, float>(values), 3, dstStart);
+        }
+        
+        public void ForEachSub<TAction>(TAction handler = default) where TAction : struct, IForEachSubAction
+        {
+            _Accessor._ForEachSub(3, handler);
         }
 
         public void ForEach<TAction>(TAction handler = default) where TAction : struct, IForEachAction<Vector3>
@@ -1350,6 +1381,11 @@ namespace SharpGLTF.Memory
             _Accessor.Fill(MemoryMarshal.Cast<Vector4, float>(values), 4, dstStart);
         }
 
+        public void ForEachSub<TAction>(TAction handler = default) where TAction : struct, IForEachSubAction
+        {
+            _Accessor._ForEachSub(4, handler);
+        }
+
         public void ForEach<TAction>(TAction handler = default) where TAction : struct, IForEachAction<Vector4>
         {
             _Accessor._ForEach<Vector4, TAction>(handler);
@@ -1372,7 +1408,7 @@ namespace SharpGLTF.Memory
     /// Wraps an encoded <see cref="BYTES"/> and exposes it as an <see cref="IList{Quaternion}"/>.
     /// </summary>
     [System.Diagnostics.DebuggerDisplay("Quaternion[{Count}]")]
-    public readonly struct QuaternionArray : IList<Quaternion>, IReadOnlyList<Quaternion>
+    public readonly struct QuaternionArray : IAccessorList<Quaternion>
     {
         #region constructors
 
@@ -1442,6 +1478,14 @@ namespace SharpGLTF.Memory
         public void FillSpan(ReadOnlySpan<Quaternion> values, int dstStart = 0)
         {
             _Accessor.Fill(MemoryMarshal.Cast<Quaternion, float>(values), 3, dstStart);
+        }
+
+        public void ForEachSub<TAction>(TAction handler = default) where TAction : struct, IForEachSubAction {
+            _Accessor._ForEachSub(4, handler);
+        }
+
+        public void ForEach<TAction>(TAction handler = default) where TAction : struct, IForEachAction<Quaternion> {
+            _Accessor._ForEach<Quaternion, TAction>(handler);
         }
 
         void IList<Quaternion>.Insert(int index, Quaternion item) { throw new NotSupportedException(); }
