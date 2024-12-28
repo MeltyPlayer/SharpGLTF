@@ -1,14 +1,12 @@
-﻿using System;
-
-namespace SharpGLTF.Memory
+﻿namespace SharpGLTF.Memory
 {
-    public interface IForEachAction
+    public interface IForEachSubAction
     {
-        void Handle(int index, ReadOnlySpan<float> element);
+        void Handle(int rowI, int subI, float value);
     }
 
     public interface IForEachAction<in T> where T : struct
     {
-        void Handle(int index, T element);
+        void Handle(int rowI, T value);
     }
 }

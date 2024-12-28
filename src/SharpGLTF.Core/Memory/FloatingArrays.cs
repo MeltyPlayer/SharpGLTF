@@ -10,6 +10,7 @@ using BYTES = System.Memory<byte>;
 
 using ENCODING = SharpGLTF.Schema2.EncodingType;
 using static SharpGLTF.Memory.FloatingAccessor;
+using System.Security.Cryptography;
 
 namespace SharpGLTF.Memory
 {
@@ -229,7 +230,8 @@ namespace SharpGLTF.Memory
             }
         }
         
-        public void CopyTo(Span<float> dst, int subCount) {
+        public unsafe void CopyTo(Span<float> dst, int subCount) {
+            using var pin = this._Data.Pin();
             var rowCount = Math.Min(dst.Length / subCount, this._ItemCount);
 
             if (_Normalized)
@@ -237,53 +239,53 @@ namespace SharpGLTF.Memory
                 switch (_Encoding)
                 {
                     case ENCODING.BYTE:
-                    {
-                        var span = MemoryMarshal.Cast<byte, sbyte>(this._Data.Span);
-                        for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseSrcI = rowI * _ByteStride;
-                            for (var subI = 0; subI < subCount; ++subI)
-                            {
-                                dst[subCount * rowI + subI] = Math.Max(span[baseSrcI + subI] / 127.0f, -1);
-                            }
-                        }
-                        break;
-                    }
-                    case ENCODING.UNSIGNED_BYTE:
-                        {
-                            var span = this._Data.Span;
+                            var scan0 = (sbyte*) pin.Pointer;
                             for (var rowI = 0; rowI < rowCount; ++rowI)
                             {
-                                var baseSrcI = rowI * _ByteStride;
+                                var basePtr = scan0 + rowI * _ByteStride;
                                 for (var subI = 0; subI < subCount; ++subI)
                                 {
-                                    dst[subCount * rowI + subI] = span[baseSrcI + subI] / 255.0f;
+                                    dst[subCount * rowI + subI] = Math.Max(basePtr[subI] / 127.0f, -1);
+                                }
+                            }
+                            break;
+                        }
+                    case ENCODING.UNSIGNED_BYTE:
+                        {
+                            var scan0 = (byte*) pin.Pointer;
+                            for (var rowI = 0; rowI < rowCount; ++rowI)
+                            {
+                                var basePtr = scan0 + rowI * _ByteStride;
+                                for (var subI = 0; subI < subCount; ++subI)
+                                {
+                                    dst[subCount * rowI + subI] = basePtr[subI] / 255.0f;
                                 }
                             }
                             break;
                         }
                     case ENCODING.SHORT:
                         {
-                            var span = MemoryMarshal.Cast<byte, short>(this._Data.Span);
+                            var scan0 = (byte*) pin.Pointer;
                             for (var rowI = 0; rowI < rowCount; ++rowI)
                             {
-                                var baseSrcI = (rowI * _ByteStride) >> 1;
+                                var basePtr = (short*) (scan0 + rowI * _ByteStride);
                                 for (var subI = 0; subI < subCount; ++subI)
                                 {
-                                    dst[subCount * rowI + subI] = Math.Max(span[baseSrcI + subI] / 32767.0f, -1);
+                                    dst[subCount * rowI + subI] = Math.Max(basePtr[subI] / 32767.0f, -1);
                                 }
                             }
                             break;
                         }
                     case ENCODING.UNSIGNED_SHORT:
                         {
-                            var span = MemoryMarshal.Cast<byte, ushort>(this._Data.Span);
+                            var scan0 = (byte*) pin.Pointer;
                             for (var rowI = 0; rowI < rowCount; ++rowI)
                             {
-                                var baseSrcI = (rowI * _ByteStride) >> 1;
+                                var basePtr = (ushort*) (scan0 + rowI * _ByteStride);
                                 for (var subI = 0; subI < subCount; ++subI)
                                 {
-                                    dst[subCount * rowI + subI] = span[baseSrcI + subI] / 65535.0f;
+                                    dst[subCount * rowI + subI] = basePtr[subI] / 65535.0f;
                                 }
                             }
                             break;
@@ -297,78 +299,78 @@ namespace SharpGLTF.Memory
             {
                 case ENCODING.BYTE:
                     {
-                        var span = MemoryMarshal.Cast<byte, sbyte>(this._Data.Span);
+                        var scan0 = (sbyte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseSrcI = rowI * _ByteStride;
+                            var basePtr = scan0 + rowI * _ByteStride;
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                dst[subCount * rowI + subI] = span[baseSrcI + subI];
+                                dst[subCount * rowI + subI] = basePtr[subI];
                             }
                         }
                         break;
                     }
                 case ENCODING.UNSIGNED_BYTE:
                     {
-                        var span = this._Data.Span;
+                        var scan0 = (byte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseSrcI = rowI * _ByteStride;
+                            var basePtr = scan0 + rowI * _ByteStride;
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                dst[subCount * rowI + subI] = span[baseSrcI + subI];
+                                dst[subCount * rowI + subI] = basePtr[subI];
                             }
                         }
                         break;
                     }
                 case ENCODING.SHORT:
                     {
-                        var span = MemoryMarshal.Cast<byte, short>(this._Data.Span);
+                        var scan0 = (byte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseSrcI = (rowI * _ByteStride) >> 1;
+                            var basePtr = (short*) (scan0 + rowI * _ByteStride);
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                dst[subCount * rowI + subI] = span[baseSrcI + subI];
+                                dst[subCount * rowI + subI] = basePtr[subI];
                             }
                         }
                         break;
                     }
                 case ENCODING.UNSIGNED_SHORT:
                     {
-                        var span = MemoryMarshal.Cast<byte, ushort>(this._Data.Span);
+                        var scan0 = (byte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseSrcI = (rowI * _ByteStride) >> 1;
+                            var basePtr = (ushort*) (scan0 + rowI * _ByteStride);
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                dst[subCount * rowI + subI] = span[baseSrcI + subI];
+                                dst[subCount * rowI + subI] = basePtr[subI];
                             }
                         }
                         break;
                     }
                 case ENCODING.UNSIGNED_INT:
                     {
-                        var span = MemoryMarshal.Cast<byte, uint>(this._Data.Span);
+                        var scan0 = (byte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseSrcI = (rowI * _ByteStride) >> 2;
+                            var basePtr = (uint*) (scan0 + rowI * _ByteStride);
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                dst[subCount * rowI + subI] = span[baseSrcI + subI];
+                                dst[subCount * rowI + subI] = basePtr[subI];
                             }
                         }
                         break;
                     }
                 case ENCODING.FLOAT:
                     {
-                        var span = MemoryMarshal.Cast<byte, float>(this._Data.Span);
+                        var scan0 = (byte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseSrcI = (rowI * _ByteStride) >> 2;
+                            var basePtr = (float*) (scan0 + rowI * _ByteStride);
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                dst[subCount * rowI + subI] = span[baseSrcI + subI];
+                                dst[subCount * rowI + subI] = basePtr[subI];
                             }
                         }
                         break;
@@ -377,8 +379,9 @@ namespace SharpGLTF.Memory
             }
         }
 
-        public void Fill(ReadOnlySpan<float> src, int subCount, int offset = 0)
+        public unsafe void Fill(ReadOnlySpan<float> src, int subCount, int offset = 0)
         {
+            using var pin = this._Data.Pin();
             var rowCount = Math.Min(src.Length / subCount, this._ItemCount);
 
             if (_Normalized)
@@ -386,53 +389,53 @@ namespace SharpGLTF.Memory
                 switch (_Encoding)
                 {
                     case ENCODING.BYTE:
-                    {
-                        var span = MemoryMarshal.Cast<byte, sbyte>(this._Data.Span);
-                        for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseDstI = rowI * _ByteStride / _EncodedLen;
-                            for (var subI = 0; subI < subCount; ++subI)
-                            {
-                                span[baseDstI + subI] = (sbyte) Math.Round(src[subCount * rowI + subI] * 127.0f);
-                            }
-                        }
-                        break;
-                    }
-                    case ENCODING.UNSIGNED_BYTE:
-                        {
-                            var span = this._Data.Span;
+                            var scan0 = (sbyte*) pin.Pointer;
                             for (var rowI = 0; rowI < rowCount; ++rowI)
                             {
-                                var baseDstI = rowI * _ByteStride / _EncodedLen;
+                                var basePtr = scan0 + rowI * _ByteStride;
                                 for (var subI = 0; subI < subCount; ++subI)
                                 {
-                                    span[baseDstI + subI] = (byte) (src[subCount * rowI + subI] * 255.0f);
+                                    basePtr[subI] = (sbyte) Math.Round(src[subCount * rowI + subI] * 127.0f);
+                                }
+                            }
+                            break;
+                        }
+                    case ENCODING.UNSIGNED_BYTE:
+                        {
+                            var scan0 = (byte*) pin.Pointer;
+                            for (var rowI = 0; rowI < rowCount; ++rowI)
+                            {
+                                var basePtr = scan0 + rowI * _ByteStride;
+                                for (var subI = 0; subI < subCount; ++subI)
+                                {
+                                    basePtr[subI] = (byte) (src[subCount * rowI + subI] * 255.0f);
                                 }
                             }
                             break;
                         }
                     case ENCODING.SHORT:
                         {
-                            var span = MemoryMarshal.Cast<byte, short>(this._Data.Span);
+                            var scan0 = (byte*) pin.Pointer;
                             for (var rowI = 0; rowI < rowCount; ++rowI)
                             {
-                                var baseDstI = rowI * _ByteStride / _EncodedLen;
+                                var basePtr = (short*) (scan0 + rowI * _ByteStride);
                                 for (var subI = 0; subI < subCount; ++subI)
                                 {
-                                    span[baseDstI + subI] = (short) Math.Round(src[subCount * rowI + subI] * 32767.0f);
+                                    basePtr[subI] = (short) Math.Round(src[subCount * rowI + subI] * 32767.0f);
                                 }
                             }
                             break;
                         }
                     case ENCODING.UNSIGNED_SHORT:
                         {
-                            var span = MemoryMarshal.Cast<byte, ushort>(this._Data.Span);
+                            var scan0 = (byte*) pin.Pointer;
                             for (var rowI = 0; rowI < rowCount; ++rowI)
                             {
-                                var baseDstI = rowI * _ByteStride / _EncodedLen;
+                                var basePtr = (ushort*) (scan0 + rowI * _ByteStride);
                                 for (var subI = 0; subI < subCount; ++subI)
                                 {
-                                    span[baseDstI + subI] = (ushort) (src[subCount * rowI + subI] * 65535.0f);
+                                    basePtr[subI] = (ushort) (src[subCount * rowI + subI] * 65535.0f);
                                 }
                             }
                             break;
@@ -446,78 +449,78 @@ namespace SharpGLTF.Memory
             {
                 case ENCODING.BYTE:
                     {
-                        var span = MemoryMarshal.Cast<byte, sbyte>(this._Data.Span);
+                        var scan0 = (sbyte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseDstI = rowI * _ByteStride / _EncodedLen;
+                            var basePtr = scan0 + rowI * _ByteStride;
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                span[baseDstI + subI] = (sbyte) src[subCount * rowI + subI];
+                                basePtr[subI] = (sbyte) src[subCount * rowI + subI];
                             }
                         }
                         break;
                     }
                 case ENCODING.UNSIGNED_BYTE:
                     {
-                        var span = this._Data.Span;
+                        var scan0 = (byte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseDstI = rowI * _ByteStride / _EncodedLen;
+                            var basePtr = scan0 + rowI * _ByteStride;
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                span[baseDstI + subI] = (byte) src[subCount * rowI + subI];
+                                basePtr[subI] = (byte) src[subCount * rowI + subI];
                             }
                         }
                         break;
                     }
                 case ENCODING.SHORT:
                     {
-                        var span = MemoryMarshal.Cast<byte, short>(this._Data.Span);
+                        var scan0 = (byte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseDstI = rowI * _ByteStride / _EncodedLen;
+                            var basePtr = (short*) (scan0 + rowI * _ByteStride);
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                span[baseDstI + subI] = (short) src[subCount * rowI + subI];
+                                basePtr[subI] = (short) src[subCount * rowI + subI];
                             }
                         }
                         break;
                     }
                 case ENCODING.UNSIGNED_SHORT:
                     {
-                        var span = MemoryMarshal.Cast<byte, ushort>(this._Data.Span);
+                        var scan0 = (byte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseDstI = rowI * _ByteStride / _EncodedLen;
+                            var basePtr = (ushort*) (scan0 + rowI * _ByteStride);
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                span[baseDstI + subI] = (ushort) src[subCount * rowI + subI];
+                                basePtr[subI] = (ushort) src[subCount * rowI + subI];
                             }
                         }
                         break;
                     }
                 case ENCODING.UNSIGNED_INT:
                     {
-                        var span = MemoryMarshal.Cast<byte, uint>(this._Data.Span);
+                        var scan0 = (byte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseDstI = rowI * _ByteStride / _EncodedLen;
+                            var basePtr = (uint*) (scan0 + rowI * _ByteStride);
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                span[baseDstI + subI] = (uint) src[subCount * rowI + subI];
+                                basePtr[subI] = (uint) src[subCount * rowI + subI];
                             }
                         }
                         break;
                     }
                 case ENCODING.FLOAT:
                     {
-                        var span = MemoryMarshal.Cast<byte, float>(this._Data.Span);
+                        var scan0 = (byte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseDstI = rowI * _ByteStride / _EncodedLen;
+                            var basePtr = (float*) (scan0 + rowI * _ByteStride);
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                span[baseDstI + subI] = src[subCount * rowI + subI];
+                                basePtr[subI] = src[subCount * rowI + subI];
                             }
                         }
                         break;
@@ -526,68 +529,64 @@ namespace SharpGLTF.Memory
             }
         }
 
-        internal void _ForEach<TAction>(int subCount, TAction handler = default) where TAction : struct, IForEachAction
+        internal unsafe void _ForEachSub<TAction>(int subCount, TAction handler = default) where TAction : struct, IForEachSubAction
         {
+            using var pin = this._Data.Pin();
             var rowCount = this._ItemCount;
-            Span<float> subElements = stackalloc float[subCount];
 
             if (_Normalized)
             {
                 switch (_Encoding)
                 {
                     case ENCODING.BYTE:
-                    {
-                        var span = MemoryMarshal.Cast<byte, sbyte>(this._Data.Span);
-                        for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseSrcI = rowI * _ByteStride;
-                            for (var subI = 0; subI < subCount; ++subI)
-                            {
-                                subElements[subI] = Math.Max(span[baseSrcI + subI] / 127.0f, -1);
-                            }
-                            handler.Handle(rowI, subElements);
-                        }
-                        break;
-                    }
-                    case ENCODING.UNSIGNED_BYTE:
-                        {
-                            var span = this._Data.Span;
+                            var scan0 = (sbyte*) pin.Pointer;
                             for (var rowI = 0; rowI < rowCount; ++rowI)
                             {
-                                var baseSrcI = rowI * _ByteStride;
+                                var basePtr = scan0 + rowI * _ByteStride;
                                 for (var subI = 0; subI < subCount; ++subI)
                                 {
-                                    subElements[subI] = span[baseSrcI + subI] / 255.0f;
+                                    handler.Handle(rowI, subI, Math.Max(*(basePtr + subI) / 127.0f, -1));
                                 }
-                                handler.Handle(rowI, subElements);
+                            }
+                            break;
+                        }
+                    case ENCODING.UNSIGNED_BYTE:
+                        {
+                            var scan0 = (byte*) pin.Pointer;
+                            for (var rowI = 0; rowI < rowCount; ++rowI)
+                            {
+                                var basePtr = scan0 + rowI * _ByteStride;
+                                for (var subI = 0; subI < subCount; ++subI)
+                                {
+                                    handler.Handle(rowI, subI, *(basePtr + subI) / 255.0f);
+                                }
                             }
                             break;
                         }
                     case ENCODING.SHORT:
                         {
-                            var span = MemoryMarshal.Cast<byte, short>(this._Data.Span);
+                            var scan0 = (byte*) pin.Pointer;
                             for (var rowI = 0; rowI < rowCount; ++rowI)
                             {
-                                var baseSrcI = (rowI * _ByteStride) >> 1;
+                                var basePtr = (short*) (scan0 + rowI * _ByteStride);
                                 for (var subI = 0; subI < subCount; ++subI)
                                 {
-                                    subElements[subI] = Math.Max(span[baseSrcI + subI] / 32767.0f, -1);
+                                    handler.Handle(rowI, subI, Math.Max(*(basePtr + subI) / 32767.0f, -1));
                                 }
-                                handler.Handle(rowI, subElements);
                             }
                             break;
                         }
                     case ENCODING.UNSIGNED_SHORT:
                         {
-                            var span = MemoryMarshal.Cast<byte, ushort>(this._Data.Span);
+                            var scan0 = (byte*) pin.Pointer;
                             for (var rowI = 0; rowI < rowCount; ++rowI)
                             {
-                                var baseSrcI = (rowI * _ByteStride) >> 1;
+                                var basePtr = (ushort*) (scan0 + rowI * _ByteStride);
                                 for (var subI = 0; subI < subCount; ++subI)
                                 {
-                                    subElements[subI] = span[baseSrcI + subI] / 65535.0f;
+                                    handler.Handle(rowI, subI, *(basePtr + subI) / 65535.0f);
                                 }
-                                handler.Handle(rowI, subElements);
                             }
                             break;
                         }
@@ -600,85 +599,79 @@ namespace SharpGLTF.Memory
             {
                 case ENCODING.BYTE:
                     {
-                        var span = MemoryMarshal.Cast<byte, sbyte>(this._Data.Span);
+                        var scan0 = (sbyte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseSrcI = rowI * _ByteStride;
+                            var basePtr = scan0 + rowI * _ByteStride;
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                subElements[subI] = span[baseSrcI + subI];
+                                handler.Handle(rowI, subI, *(basePtr + subI));
                             }
-                            handler.Handle(rowI, subElements);
                         }
                         break;
                     }
                 case ENCODING.UNSIGNED_BYTE:
                     {
-                        var span = this._Data.Span;
+                        var scan0 = (byte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseSrcI = rowI * _ByteStride;
+                            var basePtr = scan0 + rowI * _ByteStride;
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                subElements[subI] = span[baseSrcI + subI];
+                                handler.Handle(rowI, subI, *(basePtr + subI));
                             }
-                            handler.Handle(rowI, subElements);
                         }
                         break;
                     }
                 case ENCODING.SHORT:
                     {
-                        var span = MemoryMarshal.Cast<byte, short>(this._Data.Span);
+                        var scan0 = (byte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseSrcI = (rowI * _ByteStride) >> 1;
+                            var basePtr = (short*) (scan0 + rowI * _ByteStride);
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                subElements[subI] = span[baseSrcI + subI];
+                                handler.Handle(rowI, subI, *(basePtr + subI));
                             }
-                            handler.Handle(rowI, subElements);
                         }
                         break;
                     }
                 case ENCODING.UNSIGNED_SHORT:
                     {
-                        var span = MemoryMarshal.Cast<byte, ushort>(this._Data.Span);
+                        var scan0 = (byte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseSrcI = (rowI * _ByteStride) >> 1;
+                            var basePtr = (ushort*) (scan0 + rowI * _ByteStride);
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                subElements[subI] = span[baseSrcI + subI];
+                                handler.Handle(rowI, subI, *(basePtr + subI));
                             }
-                            handler.Handle(rowI, subElements);
                         }
                         break;
                     }
                 case ENCODING.UNSIGNED_INT:
                     {
-                        var span = MemoryMarshal.Cast<byte, uint>(this._Data.Span);
+                        var scan0 = (byte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseSrcI = (rowI * _ByteStride) >> 2;
+                            var basePtr = (uint*) (scan0 + rowI * _ByteStride);
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                subElements[subI] = span[baseSrcI + subI];
+                                handler.Handle(rowI, subI, *(basePtr + subI));
                             }
-                            handler.Handle(rowI, subElements);
                         }
                         break;
                     }
                 case ENCODING.FLOAT:
                     {
-                        var span = MemoryMarshal.Cast<byte, float>(this._Data.Span);
+                        var scan0 = (byte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseSrcI = (rowI * _ByteStride) >> 2;
+                            var basePtr = (float*) (scan0 + rowI * _ByteStride);
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                subElements[subI] = span[baseSrcI + subI];
+                                handler.Handle(rowI, subI, *(basePtr + subI));
                             }
-                            handler.Handle(rowI, subElements);
                         }
                         break;
                     }
@@ -690,43 +683,42 @@ namespace SharpGLTF.Memory
             where T : unmanaged
             where TAction : struct, IForEachAction<T>
         {
-            var rowCount = this._ItemCount;
+            using var pin = this._Data.Pin();
 
             var tSize = sizeof(T);
             Guard.IsTrue(tSize % 4 == 0, nameof(tSize), "Size of T must be divisible by 4");
 
+            var rowCount = this._ItemCount;
             var subCount = sizeof(T) >> 2;
 
             Span<T> elementSpan = stackalloc T[1];
             Span<float> subSpan = MemoryMarshal.Cast<T, float>(elementSpan);
 
-            if (_Normalized)
-            {
-                switch (_Encoding)
-                {
+            if (_Normalized) {
+                switch (_Encoding) {
                     case ENCODING.BYTE:
-                    {
-                        var span = MemoryMarshal.Cast<byte, sbyte>(this._Data.Span);
-                        for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseSrcI = rowI * _ByteStride;
-                            for (var subI = 0; subI < subCount; ++subI)
-                            {
-                                subSpan[subI] = Math.Max(span[baseSrcI + subI] / 127.0f, -1);
-                            }
-                            handler.Handle(rowI, elementSpan[0]);
-                        }
-                        break;
-                    }
-                    case ENCODING.UNSIGNED_BYTE:
-                        {
-                            var span = this._Data.Span;
+                            var scan0 = (sbyte*) pin.Pointer;
                             for (var rowI = 0; rowI < rowCount; ++rowI)
                             {
-                                var baseSrcI = rowI * _ByteStride;
+                                var basePtr = scan0 + rowI * _ByteStride;
                                 for (var subI = 0; subI < subCount; ++subI)
                                 {
-                                    subSpan[subI] = span[baseSrcI + subI] / 255.0f;
+                                    subSpan[subI] = Math.Max(*(basePtr + subI) / 127.0f, -1);
+                                }
+                                handler.Handle(rowI, elementSpan[0]);
+                            }
+                            break;
+                        }
+                    case ENCODING.UNSIGNED_BYTE:
+                        {
+                            var scan0 = (byte*) pin.Pointer;
+                            for (var rowI = 0; rowI < rowCount; ++rowI)
+                            {
+                                var basePtr = scan0 + rowI * _ByteStride;
+                                for (var subI = 0; subI < subCount; ++subI)
+                                {
+                                    subSpan[subI] = *(basePtr + subI) / 255.0f;
                                 }
                                 handler.Handle(rowI, elementSpan[0]);
                             }
@@ -734,13 +726,13 @@ namespace SharpGLTF.Memory
                         }
                     case ENCODING.SHORT:
                         {
-                            var span = MemoryMarshal.Cast<byte, short>(this._Data.Span);
+                            var scan0 = (byte*) pin.Pointer;
                             for (var rowI = 0; rowI < rowCount; ++rowI)
                             {
-                                var baseSrcI = (rowI * _ByteStride) >> 1;
+                                var basePtr = (short*) (scan0 + rowI * _ByteStride);
                                 for (var subI = 0; subI < subCount; ++subI)
                                 {
-                                    subSpan[subI] = Math.Max(span[baseSrcI + subI] / 32767.0f, -1);
+                                    subSpan[subI] = Math.Max(*(basePtr + subI) / 32767.0f, -1);
                                 }
                                 handler.Handle(rowI, elementSpan[0]);
                             }
@@ -748,13 +740,13 @@ namespace SharpGLTF.Memory
                         }
                     case ENCODING.UNSIGNED_SHORT:
                         {
-                            var span = MemoryMarshal.Cast<byte, ushort>(this._Data.Span);
+                            var scan0 = (byte*) pin.Pointer;
                             for (var rowI = 0; rowI < rowCount; ++rowI)
                             {
-                                var baseSrcI = (rowI * _ByteStride) >> 1;
+                                var basePtr = (ushort*) (scan0 + rowI * _ByteStride);
                                 for (var subI = 0; subI < subCount; ++subI)
                                 {
-                                    subSpan[subI] = span[baseSrcI + subI] / 65535.0f;
+                                    subSpan[subI] = *(basePtr + subI) / 65535.0f;
                                 }
                                 handler.Handle(rowI, elementSpan[0]);
                             }
@@ -765,17 +757,16 @@ namespace SharpGLTF.Memory
                 return;
             }
 
-            switch (_Encoding)
-            {
+            switch (_Encoding) {
                 case ENCODING.BYTE:
                     {
-                        var span = MemoryMarshal.Cast<byte, sbyte>(this._Data.Span);
+                        var scan0 = (sbyte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseSrcI = rowI * _ByteStride;
+                            var basePtr = scan0 + rowI * _ByteStride;
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                subSpan[subI] = span[baseSrcI + subI];
+                                subSpan[subI] = basePtr[subI];
                             }
                             handler.Handle(rowI, elementSpan[0]);
                         }
@@ -783,13 +774,13 @@ namespace SharpGLTF.Memory
                     }
                 case ENCODING.UNSIGNED_BYTE:
                     {
-                        var span = this._Data.Span;
+                        var scan0 = (byte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseSrcI = rowI * _ByteStride;
+                            var basePtr = scan0 + rowI * _ByteStride;
                             for (var subI = 0; subI < subCount; ++subI)
                             {
-                                subSpan[subI] = span[baseSrcI + subI];
+                                subSpan[subI] = basePtr[subI];
                             }
                             handler.Handle(rowI, elementSpan[0]);
                         }
@@ -797,13 +788,12 @@ namespace SharpGLTF.Memory
                     }
                 case ENCODING.SHORT:
                     {
-                        var span = MemoryMarshal.Cast<byte, short>(this._Data.Span);
+                        var scan0 = (byte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseSrcI = (rowI * _ByteStride) >> 1;
-                            for (var subI = 0; subI < subCount; ++subI)
-                            {
-                                subSpan[subI] = span[baseSrcI + subI];
+                            var basePtr = (short*) (scan0 + rowI * _ByteStride);
+                            for (var subI = 0; subI < subCount; ++subI) {
+                                subSpan[subI] = basePtr[subI];
                             }
                             handler.Handle(rowI, elementSpan[0]);
                         }
@@ -811,13 +801,12 @@ namespace SharpGLTF.Memory
                     }
                 case ENCODING.UNSIGNED_SHORT:
                     {
-                        var span = MemoryMarshal.Cast<byte, ushort>(this._Data.Span);
+                        var scan0 = (byte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseSrcI = (rowI * _ByteStride) >> 1;
-                            for (var subI = 0; subI < subCount; ++subI)
-                            {
-                                subSpan[subI] = span[baseSrcI + subI];
+                            var basePtr = (ushort*) (scan0 + rowI * _ByteStride);
+                            for (var subI = 0; subI < subCount; ++subI) {
+                                subSpan[subI] = basePtr[subI];
                             }
                             handler.Handle(rowI, elementSpan[0]);
                         }
@@ -825,13 +814,12 @@ namespace SharpGLTF.Memory
                     }
                 case ENCODING.UNSIGNED_INT:
                     {
-                        var span = MemoryMarshal.Cast<byte, uint>(this._Data.Span);
+                        var scan0 = (byte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseSrcI = (rowI * _ByteStride) >> 2;
-                            for (var subI = 0; subI < subCount; ++subI)
-                            {
-                                subSpan[subI] = span[baseSrcI + subI];
+                            var basePtr = (uint*) (scan0 + rowI * _ByteStride);
+                            for (var subI = 0; subI < subCount; ++subI) {
+                                subSpan[subI] = basePtr[subI];
                             }
                             handler.Handle(rowI, elementSpan[0]);
                         }
@@ -839,13 +827,12 @@ namespace SharpGLTF.Memory
                     }
                 case ENCODING.FLOAT:
                     {
-                        var span = MemoryMarshal.Cast<byte, float>(this._Data.Span);
+                        var scan0 = (byte*) pin.Pointer;
                         for (var rowI = 0; rowI < rowCount; ++rowI)
                         {
-                            var baseSrcI = (rowI * _ByteStride) >> 2;
-                            for (var subI = 0; subI < subCount; ++subI)
-                            {
-                                subSpan[subI] = span[baseSrcI + subI];
+                            var basePtr = (float*) (scan0 + rowI * _ByteStride);
+                            for (var subI = 0; subI < subCount; ++subI) {
+                                subSpan[subI] = basePtr[subI];
                             }
                             handler.Handle(rowI, elementSpan[0]);
                         }
@@ -1955,9 +1942,9 @@ namespace SharpGLTF.Memory
             for (int i = 0; i < count; ++i) dstItem[i] = _Accessor[index, i];
         }
 
-        public void ForEach<TAction>(int subCount, TAction handler = default) where TAction : struct, IForEachAction
+        public void ForEachSub<TAction>(int subCount, TAction handler = default) where TAction : struct, IForEachSubAction
         {
-            _Accessor._ForEach(subCount, handler);
+            _Accessor._ForEachSub(subCount, handler);
         }
 
         public IEnumerator<Single[]> GetEnumerator() { return new EncodedArrayEnumerator<Single[]>(this); }

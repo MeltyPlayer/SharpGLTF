@@ -290,35 +290,30 @@ namespace SharpGLTF.Memory
                 memory.Attribute.ByteStride,
                 dimensions, memory.Attribute.Encoding,
                 false); // bounds checks are done without normalization; https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#_accessor_max
-            array.ForEach(dimensions, new ValidateMinMaxForEachAction(expectedMin, expectedMax));
+            array.ForEachSub(dimensions, new ValidateMinMaxForEachSubAction(expectedMin, expectedMax));
         }
 
-        private readonly struct ValidateMinMaxForEachAction : IForEachAction
+        private readonly struct ValidateMinMaxForEachSubAction : IForEachSubAction
         {
             private readonly IReadOnlyList<double> _expectedMin;
             private readonly IReadOnlyList<double> _expectedMax;
 
-            public ValidateMinMaxForEachAction(IReadOnlyList<double> expectedMin, IReadOnlyList<double> expectedMax)
+            public ValidateMinMaxForEachSubAction(IReadOnlyList<double> expectedMin, IReadOnlyList<double> expectedMax)
             {
                 this._expectedMin = expectedMin;
                 this._expectedMax = expectedMax;
             }
 
-            public void Handle(int index, ReadOnlySpan<float> span)
+            public void Handle(int rowI, int subI, float value)
             {
-                for (int j = 0; j < span.Length; ++j)
-                {
-                    var v = span[j];
+                // if (!v._IsFinite()) result.AddError(this, $"Item[{j}][{i}] is not a finite number: {v}");
 
-                    // if (!v._IsFinite()) result.AddError(this, $"Item[{j}][{i}] is not a finite number: {v}");
+                var axisMin = _expectedMin[subI];
+                var axisMax = _expectedMax[subI];
 
-                    var axisMin = _expectedMin[j];
-                    var axisMax = _expectedMax[j];
+                if (value < axisMin || value > axisMax) throw new ArgumentOutOfRangeException("memory", $"Value[{rowI}] is out of bounds. {axisMin} <= {value} <= {axisMax}");
 
-                    if (v < axisMin || v > axisMax) throw new ArgumentOutOfRangeException("memory", $"Value[{index}] is out of bounds. {axisMin} <= {v} <= {axisMax}");
-
-                    // if (v < min || v > max) result.AddError(this, $"Item[{j}][{i}] is out of bounds. {min} <= {v} <= {max}");
-                }
+                // if (v < min || v > max) result.AddError(this, $"Item[{j}][{i}] is out of bounds. {min} <= {v} <= {max}");
             }
         }
 
