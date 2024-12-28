@@ -171,7 +171,7 @@ namespace SharpGLTF.Schema2
             }
 
             var array = new MultiArray(this.SourceBufferView.Content, this.ByteOffset, this.Count, this.SourceBufferView.ByteStride, dimensions, this.Encoding, false);
-            array.ForEachSub(dimensions, new MinMaxForEachSubAction(this._min, this._max), false);
+            array.ForEachSub(dimensions, new MinMaxForEachSubAction(this._min, this._max), ParallelType.SUB_ONLY);
         }
 
         private readonly struct MinMaxForEachSubAction : IForEachSubAction

@@ -10,6 +10,7 @@ using CommunityToolkit.HighPerformance.Helpers;
 using BYTES = System.Memory<byte>;
 
 using ENCODING = SharpGLTF.Schema2.EncodingType;
+using static SharpGLTF.Memory.FloatingAccessor;
 
 namespace SharpGLTF.Memory
 {
@@ -528,7 +529,7 @@ namespace SharpGLTF.Memory
             }
         }
 
-        internal unsafe void _ForEachSub<TAction>(int subCount, TAction handler = default, bool parallel = true) where TAction : struct, IForEachSubAction
+        internal unsafe void _ForEachSub<TAction>(int subCount, TAction handler = default, ParallelType parallelType = ParallelType.ROW_AND_SUB) where TAction : struct, IForEachSubAction
         {
             using var pin = this._Data.Pin();
             var rowCount = this._ItemCount;
@@ -663,15 +664,19 @@ namespace SharpGLTF.Memory
                     }
                 case ENCODING.FLOAT:
                     {
-                        var action = new UnnormalizedFloatSpanForEachAction<TAction>((byte*) pin.Pointer, _ByteStride, subCount, handler);
-                        if (parallel)
+                        switch (parallelType)
                         {
-                            ParallelHelper.For(0, rowCount, action);
-                        } else {
-                            for (var rowI = 0; rowI < rowCount; ++rowI)
-                            {
-                                action.Invoke(rowI);
-                            }
+                            case ParallelType.ROW_AND_SUB:
+                                {
+                                    ParallelHelper.For2D(0, rowCount, 0, subCount, new UnnormalizedFloatRowAndSubForEachAction<TAction>((byte*)pin.Pointer, _ByteStride, handler));
+                                    break;
+                                }
+                            case ParallelType.SUB_ONLY:
+                                {
+                                    ParallelHelper.For(0, subCount, new UnnormalizedFloatSubForEachAction<TAction>((byte*)pin.Pointer, _ByteStride, rowCount, handler));
+                                    break;
+                                }
+                            default: throw new ArgumentOutOfRangeException(nameof(parallelType), parallelType, null);
                         }
                         break;
                     }
@@ -679,23 +684,46 @@ namespace SharpGLTF.Memory
             }
         }
 
-        private readonly unsafe struct UnnormalizedFloatSpanForEachAction<TAction> : IAction where TAction : struct, IForEachSubAction
+        private readonly unsafe struct UnnormalizedFloatRowAndSubForEachAction<TAction> : IAction2D where TAction : struct, IForEachSubAction
         {
             private readonly byte* _scan0;
             private readonly int _byteStride;
-            private readonly int _subCount;
             private readonly TAction _handler;
 
-            public UnnormalizedFloatSpanForEachAction(byte* scan0, int byteStride, int subCount, TAction handler) {
+            public UnnormalizedFloatRowAndSubForEachAction(byte* scan0, int byteStride, TAction handler)
+            {
                 this._scan0 = scan0;
                 this._byteStride = byteStride;
-                this._subCount = subCount;
                 this._handler = handler;
             }
 
-            public void Invoke(int rowI) {
+            public void Invoke(int rowI, int subI)
+            {
                 var basePtr = (float*)(_scan0 + rowI * _byteStride);
-                for (var subI = 0; subI < _subCount; ++subI) {
+                _handler.Handle(rowI, subI, basePtr[subI]);
+            }
+        }
+
+        private readonly unsafe struct UnnormalizedFloatSubForEachAction<TAction> : IAction where TAction : struct, IForEachSubAction
+        {
+            private readonly byte* _scan0;
+            private readonly int _byteStride;
+            private readonly int _rowCount;
+            private readonly TAction _handler;
+
+            public UnnormalizedFloatSubForEachAction(byte* scan0, int byteStride, int rowCount, TAction handler)
+            {
+                this._scan0 = scan0;
+                this._byteStride = byteStride;
+                this._rowCount = rowCount;
+                this._handler = handler;
+            }
+
+            public void Invoke(int subI)
+            {
+                for (var rowI = 0; rowI < _rowCount; rowI++)
+                {
+                    var basePtr = (float*) (_scan0 + rowI * _byteStride);
                     _handler.Handle(rowI, subI, basePtr[subI]);
                 }
             }
@@ -1986,9 +2014,9 @@ namespace SharpGLTF.Memory
             for (int i = 0; i < count; ++i) dstItem[i] = _Accessor[index, i];
         }
 
-        public void ForEachSub<TAction>(int subCount, TAction handler = default, bool parallel = true) where TAction : struct, IForEachSubAction
+        public void ForEachSub<TAction>(int subCount, TAction handler = default, ParallelType parallelType = ParallelType.ROW_AND_SUB) where TAction : struct, IForEachSubAction
         {
-            _Accessor._ForEachSub(subCount, handler, parallel);
+            _Accessor._ForEachSub(subCount, handler, parallelType);
         }
 
         public IEnumerator<Single[]> GetEnumerator() { return new EncodedArrayEnumerator<Single[]>(this); }
