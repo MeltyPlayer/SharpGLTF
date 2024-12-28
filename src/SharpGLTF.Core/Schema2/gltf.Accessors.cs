@@ -4,6 +4,8 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
+
+using SharpGLTF.Collections;
 using SharpGLTF.Memory;
 
 using VALIDATIONCTX = SharpGLTF.Validation.ValidationContext;
@@ -171,15 +173,21 @@ namespace SharpGLTF.Schema2
             }
 
             var array = new MultiArray(this.SourceBufferView.Content, this.ByteOffset, this.Count, this.SourceBufferView.ByteStride, dimensions, this.Encoding, false);
-            array.ForEachSub(dimensions, new MinMaxForEachSubAction(this._min, this._max), ParallelType.SUB_ONLY);
+            unsafe {
+                fixed (double* minPtr = &this._min.GetInternalArray()[0]) {
+                    fixed (double* maxPtr = &this._max.GetInternalArray()[0]) {
+                        array.ForEachSub(dimensions, new MinMaxForEachSubAction(minPtr, maxPtr), ParallelType.SUB_ONLY);
+                    }
+                }
+            }
         }
 
-        private readonly struct MinMaxForEachSubAction : IForEachSubAction
+        private readonly unsafe struct MinMaxForEachSubAction : IForEachSubAction
         {
-            private readonly IList<double> _min;
-            private readonly IList<double> _max;
+            private readonly double* _min;
+            private readonly double* _max;
 
-            public MinMaxForEachSubAction(IList<double> min, IList<double> max)
+            public MinMaxForEachSubAction(double* min, double* max)
             {
                 this._min = min;
                 this._max = max;
