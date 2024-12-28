@@ -279,6 +279,9 @@ namespace SharpGLTF.Memory
                 // if (_min[i] > _max[i]) result.AddError(this, $"min[{i}] is larger than max[{i}]");
             }
 
+            var expectedMinFloats = expectedMin.Select(item => (float)item).ToArray();
+            var expectedMaxFloats = expectedMax.Select(item => (float)item).ToArray();
+
             var xinfo = memory.Attribute;
             xinfo.Dimensions = DIMENSIONS.SCALAR;
             memory = new MemoryAccessor(memory.Data, xinfo);
@@ -290,15 +293,15 @@ namespace SharpGLTF.Memory
                 memory.Attribute.ByteStride,
                 dimensions, memory.Attribute.Encoding,
                 false); // bounds checks are done without normalization; https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#_accessor_max
-            array.ForEachSub(dimensions, new ValidateMinMaxForEachSubAction(expectedMin, expectedMax));
+            array.ForEachSub(dimensions, new ValidateMinMaxForEachSubAction(expectedMinFloats, expectedMaxFloats));
         }
 
         private readonly struct ValidateMinMaxForEachSubAction : IForEachSubAction
         {
-            private readonly IReadOnlyList<double> _expectedMin;
-            private readonly IReadOnlyList<double> _expectedMax;
+            private readonly float[] _expectedMin;
+            private readonly float[] _expectedMax;
 
-            public ValidateMinMaxForEachSubAction(IReadOnlyList<double> expectedMin, IReadOnlyList<double> expectedMax)
+            public ValidateMinMaxForEachSubAction(float[] expectedMin, float[] expectedMax)
             {
                 this._expectedMin = expectedMin;
                 this._expectedMax = expectedMax;
