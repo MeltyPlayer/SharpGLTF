@@ -158,7 +158,7 @@ namespace SharpGLTF.IO
 
         private static void _WriteMaterialsFile(Stream fs, IEnumerable<Material> materials, Dictionary<Material, string> mmap, Dictionary<MemoryImage, string> imageNameByImage)
         {
-            using (var sw = new StreamWriter(fs, FILEENCODING))
+            using (var sw = new StreamWriter(fs, FILEENCODING, ushort.MaxValue))
             {
                 _WriteMaterialsFile(sw, materials, mmap, imageNameByImage);
             }
@@ -186,7 +186,7 @@ namespace SharpGLTF.IO
 
         private void _WriteGeometryFile(Stream s, IReadOnlyDictionary<Material, string> materials, string mtlLib)
         {
-            using (var sw = new StreamWriter(s, FILEENCODING))
+            using (var sw = new StreamWriter(s, FILEENCODING, ushort.MaxValue))
             {
                 _WriteGeometryFile(sw, materials, mtlLib);
             }
