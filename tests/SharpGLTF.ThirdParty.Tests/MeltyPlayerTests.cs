@@ -137,7 +137,7 @@ namespace SharpGLTF.ThirdParty
                         (x + 1, y),
                         (x, y + 1),
                         (x + 1, y + 1)
-                    }.Select(pos => VertexBuilder<VertexPositionNormal, VertexColor2Texture1, VertexJoints8>
+                    }.Select(pos => VertexBuilder<VertexPositionNormal, VertexColor2Texture2, VertexJoints8>
                              .Create(new Vector3(pos.X, pos.Y, 0), new Vector3(x, y, 0))
                              .WithMaterial(new Vector4(pos.X / gridSize, pos.Y / gridSize, 0, 1),
                                            new Vector4(0, pos.X / gridSize, pos.Y / gridSize, 1),
